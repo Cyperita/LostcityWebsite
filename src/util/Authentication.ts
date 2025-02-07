@@ -22,7 +22,7 @@ function handleResponse(req: FastifyRequest, reply: FastifyReply, redirect: bool
     }
 }
 
-export function requiresLogin(redirect: boolean = false) {
+export function requiresLogin(redirect: boolean = false): any {
     return (request: FastifyRequest, reply: FastifyReply, done: (error?: Error) => void) => {
         if (!isLoggedIn(request)) {
             return handleResponse(request, reply, redirect);
@@ -31,7 +31,7 @@ export function requiresLogin(redirect: boolean = false) {
     }
 }
 
-export function requiresStaffLevel(staffLevel: number, redirect: boolean = false) {
+export function requiresStaffLevel(staffLevel: number, redirect: boolean = false): any {
     return (request: FastifyRequest, reply: FastifyReply, done: (error?: Error) => void) => {
         if (!isLoggedIn(request) || request.session.account.staffmodlevel < staffLevel) {
             return handleResponse(request, reply, redirect);

@@ -7,7 +7,7 @@ import { db } from '#/db/query.js';
 
 import { profiles, resolveSelectedProfile } from '#/util/Profile.js';
 import { toSafeName } from '#/jstring/JString.js';
-import { ChangePasswordBody, LoginPageQuery, LoginRequestBody, requiresLogin } from '#/util/Authentication.js';
+import { LoginPageQuery, LoginRequestBody, requiresLogin } from '#/util/Authentication.js';
 import { sanitize_account } from '#/db/types.js';
 
 export default async function (app: FastifyInstance) {
