@@ -1,20 +1,17 @@
 import bcrypt from 'bcrypt';
 import fs from 'fs';
 
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
 import { db } from '#/db/query.js';
 
 import { profiles, resolveSelectedProfile } from '#/util/Profile.js';
 import { toSafeName } from '#/jstring/JString.js';
+import { ChangePasswordBody, LoginPageQuery, LoginRequestBody, requiresLogin } from '#/util/Authentication.js';
+import { sanitize_account } from '#/db/types.js';
 
 export default async function (app: FastifyInstance) {
-    app.get('/', async (req: any, res: any) => {
-        // todo: validation handler instead of in route
-        if (!req.session.account) {
-            return res.redirect('/account/login', 302);
-        }
-
+    app.get('/', { onRequest: requiresLogin(true) }, async (req: FastifyRequest, res: FastifyReply) => {
         const profile = resolveSelectedProfile(req);
 
         const { success, error} = req.session;
@@ -29,7 +26,7 @@ export default async function (app: FastifyInstance) {
         });
     });
 
-    app.get('/login', async (req: any, res: any) => {
+    app.get('/login', async (req: FastifyRequest, res: FastifyReply) => {
         const { success, error} = req.session;
         delete req.session.success;
         delete req.session.error;
@@ -40,12 +37,12 @@ export default async function (app: FastifyInstance) {
         });
     });
 
-    app.get('/logout', async (req: any, res: any) => {
-        req.session.account = null;
+    app.get('/logout', async (req: FastifyRequest, res: FastifyReply) => {
+        req.session.destroy();
         return res.redirect('/account/login', 302);
     });
 
-    app.get('/forgot', async (req: any, res: any) => {
+    app.get('/forgot', async (req: FastifyRequest, res: FastifyReply) => {
         const { success, error} = req.session;
         delete req.session.success;
         delete req.session.error;
@@ -56,21 +53,20 @@ export default async function (app: FastifyInstance) {
         });
     });
 
-    app.post('/login', async (req: any, res: any) => {
+    app.post('/login', async (req: FastifyRequest<{ Body: LoginRequestBody, Querystring: LoginPageQuery }>, res: FastifyReply) => {
         const { username, password } = req.body;
 
-        const account = await db.selectFrom('account').where('username', '=', toSafeName(username)).selectAll().executeTakeFirst();
+        const account = await db.selectFrom('account')
+                .where('username', '=', toSafeName(username))
+                .selectAll()
+                .executeTakeFirst();
 
         if (!account || !(await bcrypt.compare(password.toLowerCase(), account.password))) {
             req.session.error = 'Invalid username or password.';
             return res.redirect('/account/login', 302);
         }
 
-        req.session.account = {
-            id: account.id,
-            username: account.username,
-            staffmodlevel: account.staffmodlevel
-        };
+        req.session.account = sanitize_account(account);
 
         const redirect_uri = req.query.redirectUrl;
         if (redirect_uri) {
@@ -80,11 +76,7 @@ export default async function (app: FastifyInstance) {
         return res.redirect('/account', 302);
     });
 
-    app.post('/password', async (req: any, res: any) => {
-        if (!req.session.account) {
-            return res.redirect('/account/login', 302);
-        }
-
+    app.post('/password', { onRequest: requiresLogin(true) }, async (req: any, res: any) => {
         const { password, password2 } = req.body;
 
         if (!password || password.length < 5 || password.length > 20) {
@@ -104,12 +96,13 @@ export default async function (app: FastifyInstance) {
         return res.redirect('/account', 302);
     });
 
-    app.post('/forgot', async (req: any, res: any) => {
+    app.post('/forgot', async (req: FastifyRequest, res: FastifyReply) => {
         return res.redirect('/account/forgot', 302);
     });
 
-    app.post('/export', async (req: any, reply) => {
+    app.post('/export', async (req: FastifyRequest, reply: FastifyReply) => {
         // todo: move to input validation
+        // todo: make `requiresLogin()` support custom redirect
         if (!req.session.account) {
             return reply.redirect('/account', 302);
         }

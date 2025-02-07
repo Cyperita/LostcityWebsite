@@ -6,6 +6,7 @@ import { db, toDbDate } from '#/db/query.js';
 import { toDisplayName, toSafeName } from '#/jstring/JString.js';
 import LoggerEventType from '#/util/LoggerEventType.js';
 import { isUsernameExplicit, isUsernameValid } from '#/util/Username.js';
+import { requiresStaffLevel } from '#/util/Authentication.js';
 
 function toDisplayCoord(coord: number) {
     const level = (coord >> 28) & 0x3;
@@ -35,14 +36,9 @@ const reasons = [
 ];
 
 export default async function (app: FastifyInstance) {
-    app.get('/overview/:username', async (req: any, res: any) => {
+    app.get('/overview/:username', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
         try {
             const { username } = req.params;
-
-            if (!req.session.account || req.session.account.staffmodlevel < 1) {
-                return res.redirect(`/account/login?redirectUrl=/mod/overview/${username}`, 302);
-            }
-
             const account = await db.selectFrom('account').where('username', '=', username).selectAll().executeTakeFirst();
 
             if (!account) {
@@ -73,12 +69,8 @@ export default async function (app: FastifyInstance) {
         }
     });
 
-    app.get('/reports', async (req: any, res: any) => {
+    app.get('/reports', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
         try {
-            if (!req.session.account || req.session.account.staffmodlevel < 1) {
-                return res.redirect('/account/login?redirectUrl=/mod/reports', 302);
-            }
-
             return res.view('mod/reports', {
                 toDisplayName,
                 toDisplayCoord,
@@ -93,13 +85,9 @@ export default async function (app: FastifyInstance) {
         }
     });
 
-    app.get('/uid/:uid', async (req: any, res: any) => {
+    app.get('/uid/:uid', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
         try {
             const { uid } = req.params;
-
-            if (!req.session.account || req.session.account.staffmodlevel < 1) {
-                return res.redirect(`/account/login?redirectUrl=/mod/uid/${uid}`, 302);
-            }
 
             const sessions = await db.selectFrom('session').select('uid')
                 .where('uid', '=', uid)
@@ -117,13 +105,9 @@ export default async function (app: FastifyInstance) {
         }
     });
 
-    app.get('/ip/:ip', async (req: any, res: any) => {
+    app.get('/ip/:ip', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
         try {
             const { ip } = req.params;
-
-            if (!req.session.account || req.session.account.staffmodlevel < 1) {
-                return res.redirect(`/account/login?redirectUrl=/mod/ip/${ip}`, 302);
-            }
 
             const sessions = await db.selectFrom('session').select('ip')
                 .where('ip', '=', ip)
@@ -141,11 +125,7 @@ export default async function (app: FastifyInstance) {
         }
     });
 
-    app.post('/ban/:id', async (req: any, res: any) => {
-        if (!req.session.account || req.session.account.staffmodlevel < 1) {
-            return res.status(401).send({ error: 'Unauthorized' });
-        }
-
+    app.post('/ban/:id', { onRequest: requiresStaffLevel(1) }, async (req: any, res: any) => {
         const { id } = req.params;
         const { banned_until } = req.body;
 
@@ -173,11 +153,7 @@ export default async function (app: FastifyInstance) {
         return res.status(200).send({ success: true });
     });
 
-    app.post('/unban/:id', async (req: any, res: any) => {
-        if (!req.session.account || req.session.account.staffmodlevel < 1) {
-            return res.status(401).send({ error: 'Unauthorized' });
-        }
-
+    app.post('/unban/:id', { onRequest: requiresStaffLevel(1) }, async (req: any, res: any) => {
         const { id } = req.params;
         const account = db.selectFrom('account')
             .where('id', '=', id)
@@ -196,11 +172,7 @@ export default async function (app: FastifyInstance) {
         return res.status(200).send({ success: true });
     });
 
-    app.post('/mute/:id', async (req: any, res: any) => {
-        if (!req.session.account || req.session.account.staffmodlevel < 1) {
-            return res.status(401).send();
-        }
-
+    app.post('/mute/:id', { onRequest: requiresStaffLevel(1) }, async (req: any, res: any) => {
         const { id } = req.params;
         const { muted_until } = req.body;
 
@@ -228,11 +200,7 @@ export default async function (app: FastifyInstance) {
         return res.status(200).send({ success: true });
     });
 
-    app.post('/unmute/:id', async (req: any, res: any) => {
-        if (!req.session.account || req.session.account.staffmodlevel < 1) {
-            return res.status(401).send();
-        }
-
+    app.post('/unmute/:id', { onRequest: requiresStaffLevel(1) }, async (req: any, res: any) => {
         const { id } = req.params;
         const account = db.selectFrom('account')
             .where('id', '=', id)
@@ -251,11 +219,7 @@ export default async function (app: FastifyInstance) {
         return res.status(200).send({ success: true });
     });
 
-    app.post('/kick/:id', async (req: any, res: any) => {
-        if (!req.session.account || req.session.account.staffmodlevel < 1) {
-            return res.status(401).send();
-        }
-
+    app.post('/kick/:id', { onRequest: requiresStaffLevel(1) }, async (req: any, res: any) => {
         const { id } = req.params;
         const account = db.selectFrom('account')
             .where('id', '=', id)
@@ -274,11 +238,7 @@ export default async function (app: FastifyInstance) {
         return res.status(200).send({ success: true });
     });
 
-    app.post('/change-name/:id', async (req: any, res: any) => {
-        if (!req.session.account || req.session.account.staffmodlevel < 1) {
-            return res.status(401).send({ error: 'Unauthorized' });
-        }
-
+    app.post('/change-name/:id', { onRequest: requiresStaffLevel(1) }, async (req: any, res: any) => {
         const { id } = req.params;
         const { new_username, unban } = req.body;
 

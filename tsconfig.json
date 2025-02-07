@@ -20,6 +20,6 @@
     "esModuleInterop": true,
     "allowUnreachableCode": true
   },
-  "include": ["src/**/*.ts", "src/**/*.js"],
+  "include": ["src/**/*.ts", "src/**/*.js", "@types"],
   "exclude": ["node_modules", "<node_internals>/**"]
 }

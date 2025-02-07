@@ -111,3 +111,8 @@ export type DB = {
     report: report;
     session: session;
 };
+
+export function sanitize_account(account: any) {
+    const { password, registration_ip, ...saniziedAccount } = account;
+    return saniziedAccount;
+}
