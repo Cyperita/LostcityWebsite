@@ -38,7 +38,7 @@ export function isUsernameValid(username: string): UsernameCheckResult {
     if (name ==='invalid_name' || name.length < 1 || name.length > 12) {
         return {
             success: false,
-            message: 'You must enter a valid username.'
+            message: 'You must enter a valid username between 1 and 12 characters.'
         };
     }
 
