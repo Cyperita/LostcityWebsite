@@ -20,6 +20,18 @@ function toDisplayCoord(coord: number) {
     return `${level}_${mx}_${mz}_${lx}_${lz}`;
 }
 
+function toAbsolute(coord: number) {
+    const level = (coord >> 28) & 0x3;
+    const x = (coord >> 14) & 0x3fff;
+    const z = coord & 0x3fff;
+
+    return { level, x, z };
+}
+
+function toCoord(level: number, x: number, z: number) {
+    return (level << 28) | (x << 14) | z;
+}
+
 const reasons = [
     'Offensive language',
     'Item scamming',
@@ -52,7 +64,7 @@ export default async function (app: FastifyInstance) {
                 toDisplayCoord,
                 account,
                 sessions: await db.selectFrom('session').where('account_id', '=', account.id)
-                    .orderBy('timestamp desc').limit(100).selectAll().execute(),
+                    .orderBy('timestamp desc').selectAll().execute(),
                 chats: await db.selectFrom('public_chat').where('account_id', '=', account.id)
                     .orderBy('timestamp desc').limit(100).selectAll().execute(),
                 pms: await db.selectFrom('private_chat').where('account_id', '=', account.id)
@@ -299,5 +311,80 @@ export default async function (app: FastifyInstance) {
         }
 
         return res.status(200).send({ success: true });
+    });
+
+    app.get('/wealth/:username', async (req: any, res: any) => {
+        try {
+            const { username } = req.params;
+
+            if (!req.session.account || req.session.account.staffmodlevel < 1) {
+                return res.redirect(`/account/login?redirectUrl=/mod/wealth/${username}`, 302);
+            }
+
+            return res.view('mod/wealth', {
+                toDisplayName,
+                toDisplayCoord,
+                username,
+                logs: await db.selectFrom('account_session').select(['timestamp', 'coord', 'event', 'world'])
+                    .innerJoin('account', 'account_session.account_id', 'account.id').select('account.username')
+                    .where('profile', '=', 'beta')
+                    .where('username', '=', username)
+                    .where('event_type', '=', LoggerEventType.WEALTH)
+                    .orderBy('timestamp desc').execute()
+            });
+        } catch (err) {
+            console.error(err);
+            res.redirect('/', 302);
+        }
+    });
+
+    app.get('/chat', async (req: any, res: any) => {
+        try {
+            const { coord, world, timestamp } = req.query;
+
+            if (!req.session.account || req.session.account.staffmodlevel < 1) {
+                return res.redirect(`/account/login?redirectUrl=/mod/chat?coord=${coord}&world=${world}&timestamp=${timestamp}`, 302);
+            }
+
+            if (typeof coord === 'undefined' || typeof world === 'undefined' || typeof timestamp === 'undefined') {
+                return res.redirect('/', 302);
+            }
+
+            const center = toAbsolute(coord);
+            const topLeft = { level: center.level, x: center.x - 15, z: center.z - 15 };
+            const bottomRight = { level: center.level, x: center.x + 15, z: center.z + 15 };
+
+            const allCoords: number[] = [];
+            for (let x = topLeft.x; x <= bottomRight.x; x++) {
+                for (let z = topLeft.z; z <= bottomRight.z; z++) {
+                    allCoords.push(toCoord(center.level, x, z));
+                }
+            }
+
+            const oneHourBefore = toDbDate(parseInt(timestamp) - (1000 * 60 * 60));
+            const tenMinutesAfter = toDbDate(parseInt(timestamp) + (1000 * 60 * 10));
+
+            const logs = await db.selectFrom('public_chat').select(['timestamp', 'coord', 'message', 'world'])
+                .innerJoin('account', 'public_chat.account_id', 'account.id').select('account.username')
+                .where('profile', '=', 'beta')
+                .where('world', '=', world)
+                .where((eb: any) => eb.or(
+                    allCoords.map(c =>
+                        eb('coord', '=', c)
+                    )
+                ))
+                .where('timestamp', '<', tenMinutesAfter)
+                .where('timestamp', '>', oneHourBefore)
+                .orderBy('timestamp desc').execute();
+
+            return res.view('mod/chat', {
+                toDisplayName,
+                toDisplayCoord,
+                logs
+            });
+        } catch (err) {
+            console.error(err);
+            res.redirect('/', 302);
+        }
     });
 }
