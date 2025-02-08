@@ -2,4 +2,44 @@
 
 <%- include('components/sidebar.ejs', { items: [{icon: 'layout-grid', title: 'Overview', link: '/mod', active: true}, {icon: 'flag', title: 'Reports', badge: '26', link: '/mod/reports'}, {icon: 'user-search', title: 'Search Users', link: '/mod/search'}] }); %>
 
+<div class="grid flex-1 auto-cols-fr gap-y-8">
+    <div class="grid gap-6 md:grid-cols-3">
+        <div class="card bg-base-100">
+            <div class="flex flex-row gap-4 items-center justify-between p-6">
+                <div class="card-body p-0">
+                    <p class="card-title text-3xl text-error">+56</p>
+
+                    <h2 class="font-semibold text-lg">Reports Made</h2>
+                </div>
+
+                <i data-lucide="flag" class="size-16 text-stone-400"></i>
+            </div>
+        </div>
+
+        <div class="card bg-base-100">
+            <div class="flex flex-row gap-4 items-center justify-between p-6">
+                <div class="card-body p-0">
+                    <p class="card-title text-3xl text-success">+827</p>
+
+                    <h2 class="font-semibold text-lg">Accounts Created</h2>
+                </div>
+
+                <i data-lucide="user-plus" class="size-16 text-stone-400"></i>
+            </div>
+        </div>
+
+        <div class="card bg-base-100">
+            <div class="flex flex-row gap-4 items-center justify-between p-6">
+                <div class="card-body p-0">
+                    <p class="card-title text-3xl text-warning">+3M</p>
+
+                    <h2 class="font-semibold text-lg">Wealth Added</h2>
+                </div>
+
+                <i data-lucide="coins" class="size-16 text-stone-400"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
 <%- include('partials/footer.ejs'); %>
