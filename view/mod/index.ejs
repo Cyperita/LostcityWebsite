@@ -1,5 +1,5 @@
 <%- include('partials/header.ejs', { title: 'Overview', breadcrumbs: [] }); %>
 
-<p class="text-xl">Mod Panel Index Page</p>
+<%- include('components/sidebar.ejs', { items: [{icon: 'layout-grid', title: 'Overview', link: '/mod', active: true}, {icon: 'flag', title: 'Reports', badge: '26', link: '/mod/reports'}, {icon: 'user-search', title: 'Search Users', link: '/mod/search'}] }); %>
 
 <%- include('partials/footer.ejs'); %>
