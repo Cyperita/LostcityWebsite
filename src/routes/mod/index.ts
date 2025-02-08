@@ -25,6 +25,16 @@ const reasons = [
 ];
 
 export default async function (app: FastifyInstance) {
+    app.get('/', async (req: any, res: any) => {
+        try {
+            return res.view('mod/index', {
+            });
+        } catch (err) {
+            console.error(err);
+            res.redirect('/', 302);
+        }
+    });
+
     app.get('/overview/:username', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
         try {
             const { username } = req.params;
