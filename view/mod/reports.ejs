@@ -1,46 +1,61 @@
-<%- include('partials/header.ejs', { title: 'Reports', breadcrumbs: [] }); %>
+<html>
 
-<%- include('components/sidebar.ejs', { items: [{icon: 'layout-grid', title: 'Overview', link: '/mod'}, {icon: 'flag', title: 'Reports', badge: '26', link: '/mod/reports', active: true}, {icon: 'user-search', title: 'Search Users', link: '/mod/search'}] }); %>
+<head>
+    <%- include('partials/head-metadata.ejs', { title }); %>
+</head>
 
-<div class="card bg-base-100 w-full">
-    <div class="overflow-x-auto md:overflow-visible">
-        <table class="table">
-            <thead class="bg-white/5">
-                <tr>
-                    <th>Reporter</th>
-                    <th>Offender</th>
-                    <th>Reason</th>
-                    <th>World</th>
-                    <th>Coords</th>
-                    <th>Date</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% reports.forEach(function(report) { %>
-                <tr>
-                    <td><a href="/mod/overview/<%= report.username %>"
-                            class="link"><%= toDisplayName(report.username) %></a></td>
-                    <td><a href="/mod/overview/<%= report.offender %>"
-                            class="link"><%= toDisplayName(report.offender) %></a></td>
-                    <td><em><%= reasons[report.reason] %></em></td>
-                    <td><%= report.world - 9 %></td>
-                    <td><%= toDisplayCoord(report.coord) %></td>
-                    <td>
-                        <div class="md:tooltip" data-tip="<%= formatTime(report.timestamp) %>">
-                            <%= fromNow(report.timestamp) %>
-                        </div>
-                    </td>
-                </tr>
-                <% }); %>
-            </tbody>
-        </table>
-    </div>
+<body class="bg-base-200">
+    <%- include('partials/bg-image.ejs'); %>
 
-    <div class="flex justify-between items-center p-4">
-        <%- include('components/pagination.ejs', { currentPage: currentPage, totalPages: totalPages }); %>
-    </div>
-</div>
+    <%- include('partials/navbar'); %>
 
-</div>
+    <section class="container mx-auto flex flex-col gap-y-8 py-8 px-4 z-10 relative">
+        <%- include('partials/breadcrumbs', { breadcrumbs }); %>
 
-<%- include('partials/footer.ejs'); %>
+        <div class="flex flex-col gap-8 lg:flex-row lg:items-start">
+            <%- include('components/sidebar.ejs', { items: sidebarItems }); %>
+
+            <div class="grid flex-1 auto-cols-fr gap-y-8">
+                <div class="card bg-base-100 w-full">
+                    <div class="overflow-x-auto md:overflow-visible">
+                        <table class="table">
+                            <thead class="bg-white/5">
+                                <tr>
+                                    <th>Reporter</th>
+                                    <th>Offender</th>
+                                    <th>Reason</th>
+                                    <th>World</th>
+                                    <th>Coords</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% reports.forEach(function(report) { %>
+                                <tr>
+                                    <td><a href="/mod/overview/<%= report.username %>"
+                                            class="link"><%= toDisplayName(report.username) %></a></td>
+                                    <td><a href="/mod/overview/<%= report.offender %>"
+                                            class="link"><%= toDisplayName(report.offender) %></a></td>
+                                    <td><em><%= reasons[report.reason] %></em></td>
+                                    <td><%= report.world - 9 %></td>
+                                    <td><%= toDisplayCoord(report.coord) %></td>
+                                    <td>
+                                        <div class="md:tooltip" data-tip="<%= formatTime(report.timestamp) %>">
+                                            <%= fromNow(report.timestamp) %>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <%- include('components/pagination.ejs', { currentPage: currentPage, totalPages: totalPages }); %>
+                </div>
+            </div>
+        </div>
+    </section>
+    <%- include('partials/footer.ejs'); %>
+</body>
+
+</html>
