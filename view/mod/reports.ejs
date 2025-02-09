@@ -17,6 +17,64 @@
 
             <div class="grid flex-1 auto-cols-fr gap-y-8">
                 <div class="card bg-base-100 w-full">
+                    <div class="p-4">
+                        <h2 class="text-lg font-bold">Filter:</h2>
+
+                        <form class="flex flex-wrap flex-row items-end gap-2" method="get">
+                            <fieldset class="fieldset p-0">
+                                <legend class="fieldset-legend">
+                                    <i data-lucide="user" class="size-5 text-stone-400"></i>
+                                    Reporter
+                                </legend>
+
+                                <input value="<%= filters.username %>" name="username" type="search" class="input input-sm" placeholder="Username..." />
+                            </fieldset>
+
+                            <fieldset class="fieldset p-0">
+                                <legend class="fieldset-legend">
+                                    <i data-lucide="user" class="size-5 text-stone-400"></i>
+                                    Offender
+                                </legend>
+
+                                <input value="<%= filters.offender %>" name="offender" type="search" class="input input-sm" placeholder="Username..." />
+                            </fieldset>
+
+                            <fieldset class="fieldset p-0">
+                                <legend class="fieldset-legend">
+                                    <i data-lucide="gavel" class="size-5 text-stone-400"></i>
+                                    Reasons
+                                </legend>
+
+                                <select name="reason" class="select select-sm max-w-60">
+                                    <option value="">All</option>
+                                    <% Object.keys(reasons).forEach(function(reason) { %>
+                                    <option value="<%= reason %>" <%= reason === filters.reason ? 'selected' : '' %>><%= reasons[reason] %></option>
+                                    <% }); %>
+                                </select>
+                            </fieldset>
+
+                            <fieldset class="fieldset p-0">
+                                <legend class="fieldset-legend">
+                                    <i data-lucide="calendar" class="size-5 text-stone-400"></i>
+                                    Start Date
+                                </legend>
+
+                                <input value="<%= filters.start %>" type="date" class="input input-sm max-w-40" name="start" placeholder="Start Date..." />
+                            </fieldset>
+
+                            <fieldset class="fieldset p-0">
+                                <legend class="fieldset-legend">
+                                    <i data-lucide="calendar" class="size-5 text-stone-400"></i>
+                                    End Date
+                                </legend>
+
+                                <input value="<%= filters.end %>" type="date" class="input input-sm max-w-40" name="end" placeholder="End Date..." />
+                            </fieldset>
+
+                            <button class="btn btn-sm btn-primary" type="submit">Submit</button>
+                        </form>
+                    </div>
+
                     <div class="overflow-x-auto md:overflow-visible">
                         <table class="table">
                             <thead class="bg-white/5">

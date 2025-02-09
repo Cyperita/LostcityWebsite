@@ -2,7 +2,7 @@ import fs from 'fs';
 
 import { FastifyInstance } from 'fastify';
 
-import { db, toDbDate } from '#/db/query.js';
+import { db, toDbDate, buildQueryString } from '#/db/query.js';
 import { toDisplayName, toSafeName } from '#/jstring/JString.js';
 import LoggerEventType from '#/util/LoggerEventType.js';
 import { isUsernameExplicit, isUsernameValid } from '#/util/Username.js';
@@ -110,13 +110,46 @@ export default async function (app: FastifyInstance) {
         try {
             const page = parseInt(req.query.page) || 1;
             const limit = 20;
-            const offset = (page - 1) * limit;
 
-            const reports = await db.selectFrom('report').selectAll('report')
-                .innerJoin('account', 'report.account_id', 'account.id').select('account.username')
-                .orderBy('timestamp desc').limit(limit).offset(offset).execute();
+            const filters = {
+                start: req.query.start || '',
+                end: req.query.end || '',
+                reason: req.query.reason || '',
+                username: req.query.username || '',
+                offender: req.query.offender || ''
+            };
 
-            const totalRecords = await db.selectFrom('report').select(db.fn.countAll().as('count')).executeTakeFirst();
+            let baseQuery = db.selectFrom('report')
+            .innerJoin('account', 'report.account_id', 'account.id');
+
+            if (filters.start) {
+                baseQuery = baseQuery.where('timestamp', '>=', toDbDate(filters.start));
+            }
+            if (filters.end) {
+                baseQuery = baseQuery.where('timestamp', '<=', toDbDate(filters.end));
+            }
+            if (filters.reason) {
+                baseQuery = baseQuery.where('reason', '=', filters.reason);
+            }
+            if (filters.username) {
+                baseQuery = baseQuery.where('account.username', '=', filters.username);
+            }
+            if (filters.offender) {
+                baseQuery = baseQuery.where('offender', '=', filters.offender);
+            }
+
+            const totalRecords = await baseQuery
+                .select(({ fn }) => fn.countAll().as('count'))
+                .executeTakeFirst();
+
+            const reports = await baseQuery
+                .selectAll('report')
+                .select('account.username')
+                .orderBy('timestamp desc')
+                .limit(limit)
+                .offset((page - 1) * limit)
+                .execute();
+
             const totalPages = totalRecords ? Math.ceil(Number(totalRecords.count) / limit) : 0;
 
             return res.view('mod/reports', {
@@ -132,7 +165,9 @@ export default async function (app: FastifyInstance) {
                 reports,
                 reasons,
                 currentPage: page,
-                totalPages
+                totalPages,
+                filters,
+                filtersQuery: buildQueryString(filters, ['page'])
             });
         } catch (err) {
             console.error(err);
