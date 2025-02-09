@@ -43,3 +43,10 @@ export function toDbDate(date: Date | string | number) {
 
     return date.toISOString().slice(0, 19).replace('T', ' ');
 }
+
+export function buildQueryString(query: Record<string, any>, excludeKeys: string[] = []): string {
+    return Object.entries(query)
+        .filter(([key]) => !excludeKeys.includes(key))
+        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+        .join('&');
+}
