@@ -1,29 +1,33 @@
-<div class="join">
-    <% if (currentPage > 1) { %>
+<div class="flex justify-between items-center p-4">
+    <div class="join">
+        <% if (currentPage > 1) { %>
         <a href="?page=<%= currentPage - 1 %>" class="join-item btn">Previous</a>
-    <% } %>
+        <% } %>
 
-    <% if (currentPage > 3) { %>
+        <% if (currentPage > 3) { %>
         <a href="?page=1" class="join-item btn">1</a>
 
         <% if (currentPage > 4) { %>
-            <span class="join-item btn btn-disabled">...</span>
+        <span class="join-item btn btn-disabled">...</span>
         <% } %>
-    <% } %>
+        <% } %>
 
-    <% for (var i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) { %>
+        <% for (var i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) { %>
         <a href="?page=<%= i %>" class="join-item btn <%= currentPage === i ? 'btn-active' : '' %>"><%= i %></a>
-    <% } %>
+        <% } %>
 
-    <% if (currentPage < totalPages - 2) { %>
+        <% if (currentPage < totalPages - 2) { %>
         <% if (currentPage < totalPages - 3) { %>
-            <span class="join-item btn btn-disabled">...</span>
+        <span class="join-item btn btn-disabled">...</span>
         <% } %>
 
         <a href="?page=<%= totalPages %>" class="join-item btn"><%= totalPages %></a>
-    <% } %>
+        <% } %>
 
-    <% if (currentPage < totalPages) { %>
+        <% if (currentPage < totalPages) { %>
         <a href="?page=<%= currentPage + 1 %>" class="join-item btn">Next</a>
-    <% } %>
+        <% } %>
+    </div>
+
+    <span>Page <%= currentPage %> of <%= totalPages %></span>
 </div>
