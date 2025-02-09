@@ -1,31 +1,46 @@
-<%- include('../_partial/header.ejs', { title: 'Report Log' }); %>
-<%- include('../_components/frame-top.ejs'); %>
-<%- include('../_components/content-start.ejs'); %>
-<%- include('../_components/title-box.ejs', { title: "Report log" }); %>
+<%- include('partials/header.ejs', { title: 'Reports', breadcrumbs: [] }); %>
 
-<%- include('../_components/content-body-start.ejs'); %>
-<h3>Reports</h3>
+<%- include('components/sidebar.ejs', { items: [{icon: 'layout-grid', title: 'Overview', link: '/mod'}, {icon: 'flag', title: 'Reports', badge: '26', link: '/mod/reports', active: true}, {icon: 'user-search', title: 'Search Users', link: '/mod/search'}] }); %>
 
-<div style="height: 500px; overflow-y: scroll">
-    <% for (const report of reports) { %>
-        <div style="text-align: left">
-            <strong>
-                <%= toDisplayCoord(report.coord) %>,
-                World: <%= report.world - 9 %>
-            </strong>
+<div class="card bg-base-100 w-full">
+    <div class="overflow-x-auto md:overflow-visible">
+        <table class="table">
+            <thead class="bg-white/5">
+                <tr>
+                    <th>Reporter</th>
+                    <th>Offender</th>
+                    <th>Reason</th>
+                    <th>World</th>
+                    <th>Coords</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% reports.forEach(function(report) { %>
+                <tr>
+                    <td><a href="/mod/overview/<%= report.username %>"
+                            class="link"><%= toDisplayName(report.username) %></a></td>
+                    <td><a href="/mod/overview/<%= report.offender %>"
+                            class="link"><%= toDisplayName(report.offender) %></a></td>
+                    <td><em><%= reasons[report.reason] %></em></td>
+                    <td><%= report.world - 9 %></td>
+                    <td><%= toDisplayCoord(report.coord) %></td>
+                    <td>
+                        <div class="md:tooltip" data-tip="<%= formatTime(report.timestamp) %>">
+                            <%= fromNow(report.timestamp) %>
+                        </div>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
 
-            <span style="float: right">
-                <%= report.timestamp.toISOString().replace("T"," ").substring(0, 19); %>
-            </span>
-
-            <br>
-
-            <a href="/mod/overview/<%= report.username %>"><%= toDisplayName(report.username) %></a> reported <a href="/mod/overview/<%= report.offender %>"><%= toDisplayName(report.offender) %></a>: <em><%= reasons[report.reason] %></em>
-        </div>
-        <hr>
-    <% } %>
+    <div class="flex justify-between items-center p-4">
+        <%- include('components/pagination.ejs', { currentPage: currentPage, totalPages: totalPages }); %>
+    </div>
 </div>
-<%- include('../_components/content-body-end.ejs'); %>
 
-<%- include('../_components/content-end.ejs'); %>
-<%- include('../_partial/footer.ejs'); %>
+</div>
+
+<%- include('partials/footer.ejs'); %>

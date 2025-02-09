@@ -8,6 +8,7 @@ import LoggerEventType from '#/util/LoggerEventType.js';
 import { isUsernameExplicit, isUsernameValid } from '#/util/Username.js';
 import { requiresStaffLevel } from '#/util/Authentication.js';
 import { toAbsolute, toCoord, toDisplayCoord } from '#/util/Map.js';
+import { fromNow, formatTime } from '#/util/Timestamp.js';
 
 const reasons = [
     'Offensive language',
@@ -70,13 +71,26 @@ export default async function (app: FastifyInstance) {
 
     app.get('/reports', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
         try {
+            const page = parseInt(req.query.page) || 1;
+            const limit = 20;
+            const offset = (page - 1) * limit;
+
+            const reports = await db.selectFrom('report').selectAll('report')
+                .innerJoin('account', 'report.account_id', 'account.id').select('account.username')
+                .orderBy('timestamp desc').limit(limit).offset(offset).execute();
+
+            const totalRecords = await db.selectFrom('report').select(db.fn.countAll().as('count')).executeTakeFirst();
+            const totalPages = totalRecords ? Math.ceil(Number(totalRecords.count) / limit) : 0;
+
             return res.view('mod/reports', {
                 toDisplayName,
                 toDisplayCoord,
-                reports: await db.selectFrom('report').selectAll('report')
-                    .innerJoin('account', 'report.account_id', 'account.id').select('account.username')
-                    .orderBy('timestamp desc').execute(),
-                reasons
+                fromNow,
+                formatTime,
+                reports,
+                reasons,
+                currentPage: page,
+                totalPages
             });
         } catch (err) {
             console.error(err);
