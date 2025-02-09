@@ -1,0 +1,79 @@
+<script>
+  async function onSearchTableSearch(tableId, searchUrl, query) {
+    const url = new URL(searchUrl, document.location);
+    for (const key in query) {
+      url.searchParams.append(key, query[key]);
+    }
+
+    const searchBar = document.getElementById(`${tableId}-filter`);
+    searchBar.classList.add('input-warning');
+
+    try {
+      const response = await fetch(url.href);
+      console.log(url.href);
+      if (!response.ok) {
+        throw new Error(`Search result returned ${response.status} result`);
+      }
+
+      const json = await response.json();
+
+      const tableBody = document.querySelector(`#${tableId} tbody`);
+      tableBody.innerHTML = ''; // clear all children
+
+      if (json.data.length > 0) {
+        const tableDefinedColumnValues = Array.from(
+          document.querySelectorAll(`#${tableId} thead th`)
+        ).map(th => th.dataset.colVal );
+        
+
+        json.data.forEach(result => {
+          const newRow = document.createElement('tr');
+
+          tableDefinedColumnValues.forEach(columnName => {
+            const newColumn = document.createElement('td');
+            newColumn.textContent = result[columnName];
+            newRow.appendChild(newColumn);
+          });
+          
+          tableBody.appendChild(newRow);
+        });
+      } else {
+        const emptyRow = document.createElement('tr');
+        const emptyResult = document.createElement('td');
+        emptyResult.textContent = '(No results)';
+        emptyRow.appendChild(emptyResult);
+        tableBody.appendChild(emptyRow);
+      }
+    } catch (err) {
+      console.error(err.message);
+    }
+  }
+
+  function setupSearchableTable(table) {
+    const tableId = table.id;
+    console.log(`Setting up table ${tableId} with url '${table.dataset.searchUrl}'...`);
+
+    const searchBar = document.getElementById(`${tableId}-filter`),
+          beforeDate = document.getElementById(`${tableId}-before`),
+          afterDate = document.getElementById(`${tableId}-after`);
+    
+    searchBar.addEventListener('change', (event) => {
+      const query = {};
+      if (beforeDate.value) query.before = beforeDate.value;
+      if (afterDate.value) query.after = afterDate.value;
+      if (searchBar.value && searchBar.value !== '') query.filter = searchBar.value;
+      
+      onSearchTableSearch(tableId, table.dataset.searchUrl, query);
+    });
+  }
+  
+  const searchableTables = document.querySelectorAll('.searchable-data-table:not([data-search-url]),.searchable-data-table:not([data-search-url=""])');
+  searchableTables.forEach(async (table) => {
+    await setupSearchableTable(table);
+    const beforeInput = document.getElementById(`${table.id}-before`);
+    const afterInput = document.getElementById(`${table.id}-after`);
+    const asdf = { before: beforeInput.value, after: afterInput.value };
+    onSearchTableSearch(table.id, table.dataset.searchUrl, asdf);
+  });
+
+</script>

@@ -25,23 +25,27 @@ const reasons = [
     'Real world item trading'
 ];
 
+const tempHardcodedSidebar = [
+    { icon: 'layout-grid', title: 'Overview', link: '/mod' , active: true },
+    { icon: 'flag', title: 'Reports', badge: '26', link: '/mod/reports' },
+    { icon: 'user-search' , title: 'Search Users' , link: '/mod/search' }
+];
+
+const tempHardcodedDashboardCards = [
+    { title: 'Reports Made', value: '+56', icon: 'flag', color: 'error' },
+    { title: 'Accounts Created', value: '+827', icon: 'user-plus', color: 'success' },
+    { title: 'Wealth Added', value: '+3M', icon: 'coins', color: 'warning' }
+];
+
 export default async function (app: FastifyInstance) {
     app.get('/', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
         try {
             return res.view('mod/index', {
                 account: req.session.account,
                 breadcrumbs: [],
-                sidebarItems: [
-                    { icon: 'layout-grid', title: 'Overview', link: '/mod' , active: true },
-                    { icon: 'flag', title: 'Reports', badge: '26', link: '/mod/reports' },
-                    { icon: 'user-search' , title: 'Search Users' , link: '/mod/search' }
-                ],
-                exampleDashboardCards: [
-                    { title: 'Reports Made', value: '+56', icon: 'flag', color: 'error' },
-                    { title: 'Accounts Created', value: '+827', icon: 'user-plus', color: 'success' },
-                    { title: 'Wealth Added', value: '+3M', icon: 'coins', color: 'warning' }
-                ],
-                title: 'Overview' // TODO: Get this dynamically based off route URL
+                sidebarItems: tempHardcodedSidebar,
+                exampleDashboardCards: tempHardcodedDashboardCards,
+                title: 'Overview'
             });
         } catch (err) {
             console.error(err);
@@ -50,6 +54,26 @@ export default async function (app: FastifyInstance) {
     });
 
     app.get('/overview/:username', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
+        const { username } = req.params;
+        const account = await db.selectFrom('account').where('username', '=', username).selectAll().executeTakeFirst();
+
+        if (!account) {
+            return res.view('mod/notfound', {
+                username
+            });
+        }
+
+        return res.view('mod/overview', {
+            toDisplayName,
+            toDisplayCoord,
+            account,
+            title: `${toDisplayName(account.username)} Overview`,
+            breadcrumbs: [],
+            sidebarItems: tempHardcodedSidebar,
+        });
+    });
+
+    app.get('/overview-old/:username', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
         try {
             const { username } = req.params;
             const account = await db.selectFrom('account').where('username', '=', username).selectAll().executeTakeFirst();
@@ -60,7 +84,7 @@ export default async function (app: FastifyInstance) {
                 });
             }
 
-            return res.view('mod/overview', {
+            return res.view('mod/overview-old', {
                 toDisplayName,
                 toDisplayCoord,
                 account,

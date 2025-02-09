@@ -2,6 +2,12 @@
 <%- include('./_components/frame-top.ejs'); %>
 <%- include('./_components/content-start.ejs'); %>
 
+<% if (isLoggedInAsMod) { %>
+  <div style="display: flex; justify-content: end; width: 80%;">
+    <a style="text-align: end;" href="/mod">Mod Web Tools</a>
+  </div>
+<% } %>
+
 <img src=/img/title/rslogo.gif width=312 height=100>
 
 <table width=400>

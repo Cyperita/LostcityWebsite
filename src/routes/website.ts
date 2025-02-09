@@ -23,7 +23,8 @@ export default async function (app: FastifyInstance) {
         const latestNews = Environment.DB_HOST ? await db.selectFrom('newspost').orderBy('id', 'desc').limit(5).selectAll().execute() : [];
         return reply.view('title', {
             playerCount,
-            newsposts: latestNews
+            newsposts: latestNews,
+            isLoggedInAsMod: req.session?.account?.staffmodlevel >= 1
         });
     });
 

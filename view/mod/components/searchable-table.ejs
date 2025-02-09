@@ -1,0 +1,45 @@
+<% const now = new Date(); %>
+<% const lastWeek = new Date(now.getTime() + (-7 * 24 * 60 * 60 * 1000)); %>
+<h1><%= tableTitle %></h1>
+<div id="<%- tableId %>" class="overflow-x-auto searchable-data-table" data-search-url="<%- searchUrl %>">
+  <div style="display: flex; justify-content: end;">
+    <div class="join">
+      <input id="<%- `${tableId}-after` %>" type="date" placeholder="After date..." class="input" value="<%- lastWeek.toISOString().slice(0, 10); %>" />
+      <input id="<%- `${tableId}-before` %>" type="date" placeholder="Before date..." class="input" value="<%- now.toISOString().slice(0, 10); %>" />
+      <label class="input">
+        <svg class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g stroke-linejoin="round" stroke-linecap="round" stroke-width="2.5" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></g></svg>
+        <input id="<%- `${tableId}-filter` %>" type="search" class="grow" placeholder="Search" />
+      </label>
+    </div>
+    
+  </div>
+  <table class="table table-s">
+    <thead>
+      <tr>
+        <% columns.forEach(col => { %>
+        <th data-col-val="<%= col.value %>"><%= col.name %></th>
+        <% }); %>
+      </tr>
+    </thead>
+    <tbody id="<%- `${tableId}-body` %>">
+      <tr>
+        <td>(Loading data...)</td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <% columns.forEach(col => { %>
+        <th><%= col.name %></th>
+        <% }); %>
+      </tr>
+    </tfoot>
+  </table>
+  <div style="display: flex; justify-content: end;">
+    <select id="<%- tableId %>-amount" class="select select-s">
+      <option value="10">10</option>
+      <option value="25">25</option>
+      <option value="50">50</option>
+      <option value="100">100</option>
+    </select>
+  </div>
+</div>

@@ -1,137 +1,43 @@
-<%- include('../_partial/header.ejs', { title: 'Mod Overview', modals: true }); %>
-<%- include('../_components/frame-top.ejs'); %>
-<%- include('../_components/content-start.ejs'); %>
-<%- include('../_components/title-box.ejs', { title: account.username + "'s Mod Overview" }); %>
+<html>
+<head>
+    <%- include('partials/head-metadata.ejs', { title }); %>
+</head>
+<body class="bg-base-200">
+    <%- include('partials/navbar'); %>
+    <section class="container mx-auto flex flex-col gap-y-8 py-8 px-4">
+        <%- include('partials/breadcrumbs', { breadcrumbs }); %>
 
-<%- include('../_components/content-body-start.ejs'); %>
+        <div class="flex flex-col gap-8 lg:flex-row lg:items-start">
+            <%- include('components/sidebar.ejs', { items: sidebarItems }); %>
 
-<% if (account.password === 'blocked') { %>
-    <strong>Account name blocked by a moderator.</strong><br><br>
-<% } %>
-
-<%- include('../_components/modal-ban-player'); %>
-<%- include('../_components/modal-mute-player'); %>
-<%- include('../_components/modal-change-username'); %>
-
-<% if (account.banned_until) { %>
-Banned until: <strong id="banned-until-display"><%= account.banned_until.toISOString().replace("T"," ").substring(0, 19); %></strong><br>
-<% } %>
-
-<% if (account.muted_until) { %>
-Muted until: <strong id="muted-until-display"><%= account.muted_until.toISOString().replace("T"," ").substring(0, 19); %></strong>
-<% } %>
-
-<div style="display: flex; justify-content: space-around;">
-    <%- include('../_components/stones-button.ejs', { id: 'ban-btn', text: account.banned_until ? 'Unban' : 'Ban', shiny: true, account }) %>
-    <%- include('../_components/stones-button.ejs', { id: 'mute-btn', text: account.muted_until ? 'Unmute' : 'Mute', shiny: true }) %>
-    <%- include('../_components/stones-button.ejs', { id: 'name-change-btn', text: 'Change<br>Name' }); %>
-    <%- include('../_components/stones-button.ejs', { id: 'kick-btn', text: 'Kick' }); %>
-</div>
-
-<h3>Sessions</h3>
-
-<div style="height: 500px; overflow-y: scroll">
-    <% for (const session of sessions) { %>
-        <div style="text-align: left">
-            World: <strong><%= session.world - 9 %></strong>, IP: <strong><a href="/mod/ip/<%= session.ip %>"><%= session.ip.substring(0, 32); %></a></strong>, UID: <strong><a href="/mod/uid/<%= session.uid %>"><%= session.uid %></a></strong>
-
-            <span style="float: right">
-                <%= session.timestamp.toISOString().replace("T"," ").substring(0, 19); %>
-            </span>
+            <div class="grid flex-1 auto-cols-fr gap-y-8">
+                <%- include('components/searchable-table',
+                  { tableId: 'session-search',
+                    columns: [
+                      { name: 'World', value: 'world' },
+                      { name: 'IP', value: 'ip' },
+                      { name: 'UID', value: 'uid' }, 
+                      { name: 'Date', value: 'timestamp' }
+                    ],
+                    searchUrl: `/api/v1/mod/session/${account.id}`,
+                    tableTitle: 'Sessions' 
+                  }); %>
+                <%- include('components/searchable-table',
+                  { tableId: 'public-chats-search',
+                    columns: [
+                      { name: 'Coordinate', value: 'coord' },
+                      { name: 'World', value: 'world' },
+                      { name: 'Message', value: 'message' },
+                      { name: 'Date', value: 'timestamp' }
+                    ],
+                    searchUrl: `/api/v1/mod/chat/public/${account.id}`,
+                    tableTitle: 'Public Chats'
+                  }); %>
+            </div>
         </div>
-        <hr>
-    <% } %>
-</div>
+    </section>
+    <%- include('../_scripts/mod/searchable-table', ); %>
+    <%- include('partials/footer.ejs'); %>
+</body>
 
-<hr>
-<h3>Public Chat Messages</h3>
-
-<div style="height: 500px; overflow-y: scroll">
-    <% for (const chat of chats) { %>
-        <div style="text-align: left">
-            <a href="/mod/chat?coord=<%= chat.coord %>&world=<%= chat.world %>&timestamp=<%= chat.timestamp.getTime() %>"><%= toDisplayCoord(chat.coord) %></a>,
-            World: <strong><%= chat.world - 9 %></strong>
-
-            <span style="float: right">
-                <%= chat.timestamp.toISOString().replace("T"," ").substring(0, 19); %>
-            </span>
-
-            <br>
-
-            <%= chat.message %>
-        </div>
-        <hr>
-    <% } %>
-</div>
-
-<hr>
-<h3>Private Chat Messages</h3>
-
-<div style="height: 500px; overflow-y: scroll">
-    <% for (const pm of pms) { %>
-        <div style="text-align: left">
-            To: <strong><a href="/mod/overview/<%= pm.username %>"><%= toDisplayName(pm.username) %></a></strong>
-
-            <span style="float: right">
-                <%= pm.timestamp.toISOString().replace("T"," ").substring(0, 19); %>
-            </span>
-
-            <br>
-
-            <%= pm.message %>
-        </div>
-        <hr>
-    <% } %>
-</div>
-
-<hr>
-<h3>Events</h3>
-
-<div style="height: 500px; overflow-y: scroll">
-    <% for (const log of logs) { %>
-        <div style="text-align: left">
-            <strong><%= toDisplayCoord(log.coord) %></strong>
-
-            <span style="float: right">
-                <%= log.timestamp.toISOString().replace("T"," ").substring(0, 19); %>
-            </span>
-
-            <br>
-
-            <%= log.event %>
-        </div>
-        <hr>
-    <% } %>
-</div>
-
-<hr>
-<h3>Wealth Events</h3>
-<a href="/mod/wealth/<%= account.username %>">View Full Log</a>
-<br><br>
-
-<div style="height: 500px; overflow-y: scroll">
-    <% for (const log of wealth) { %>
-        <div style="text-align: left">
-            <strong><%= toDisplayCoord(log.coord) %></strong>
-
-            <span style="float: right">
-                <%= log.timestamp.toISOString().replace("T"," ").substring(0, 19); %>
-            </span>
-
-            <br>
-
-            <%= log.event %>
-        </div>
-        <hr>
-    <% } %>
-</div>
-<%- include('../_components/content-body-end.ejs'); %>
-
-<%- include('../_components/content-end.ejs'); %>
-<%- include('../_partial/footer.ejs'); %>
-
-<script>
-  <% const { password, ...sanitizedAccount } = account %>
-  const account = JSON.parse(`<%- JSON.stringify(sanitizedAccount) %>`);
-</script>
-<%- include('../_scripts/mod/overview.ejs'); %>
+</html>

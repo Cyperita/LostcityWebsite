@@ -31,14 +31,12 @@ function populateDefaultValues(query: PaginationQuery) {
         popualtedQuery.filter = query.filter.toString();
     }
     if (query.before) {
-        console.log('before =', query.before);
         popualtedQuery.before = new Date(query.before).toISOString();
     }
     if (query.after) {
         popualtedQuery.after = new Date(query.after).toISOString();
     }
 
-    console.log('populated = ', popualtedQuery);
     return popualtedQuery;
 }
 
@@ -56,7 +54,7 @@ export default function(fastify: FastifyInstance): void {
             .where('account_id', '=', id);
         
         if (populatedQuery.filter) {
-            sessionData = sessionData.where('uid', '=', populatedQuery.filter)
+            sessionData = sessionData.where('uid', '=', populatedQuery.filter);
         }
         if (populatedQuery.before) {
             sessionData = sessionData.where('timestamp', '<', toDbDate(populatedQuery.before));
@@ -69,9 +67,12 @@ export default function(fastify: FastifyInstance): void {
             .orderBy('timestamp desc')
             .limit(populatedQuery.amount)
             .offset(populatedQuery.offset);
-
+        
         const results = await sessionData.execute();
-        return res.status(200).send(results);
+        return res.status(200).send({
+            data: results
+            // TODO: Get paginated numbers (total filtered, total unfiltered)
+        });
     });
 
     /**
@@ -98,15 +99,18 @@ export default function(fastify: FastifyInstance): void {
         }
 
         publicChats = publicChats
-            .orderBy('timestamp')
+            .orderBy('timestamp desc')
             .limit(populatedQuery.amount)
             .offset(populatedQuery.offset);
         
         const results: any = await publicChats.execute();
-        return res.status(200).send(results.map((e: any) => {
+        const processedResults = results.map((e: any) => {
             e.coord = toDisplayCoord(e.coord);
             return e;
-        }));
+        });
+        return res.status(200).send({
+            data: processedResults
+        });
     });
 
     /**
