@@ -26,9 +26,22 @@ const reasons = [
 ];
 
 export default async function (app: FastifyInstance) {
-    app.get('/', async (req: any, res: any) => {
+    app.get('/', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
         try {
             return res.view('mod/index', {
+                account: req.session.account,
+                breadcrumbs: [],
+                sidebarItems: [
+                    { icon: 'layout-grid', title: 'Overview', link: '/mod' , active: true },
+                    { icon: 'flag', title: 'Reports', badge: '26', link: '/mod/reports' },
+                    { icon: 'user-search' , title: 'Search Users' , link: '/mod/search' }
+                ],
+                exampleDashboardCards: [
+                    { title: 'Reports Made', value: '+56', icon: 'flag', color: 'error' },
+                    { title: 'Accounts Created', value: '+827', icon: 'user-plus', color: 'success' },
+                    { title: 'Wealth Added', value: '+3M', icon: 'coins', color: 'warning' }
+                ],
+                title: 'Overview' // TODO: Get this dynamically based off route URL
             });
         } catch (err) {
             console.error(err);

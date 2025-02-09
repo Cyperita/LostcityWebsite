@@ -1,0 +1,25 @@
+<header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+        <div class="breadcrumbs text-sm font-semibold">
+            <ul>
+                <li><a href="/mod">Mod Panel</a></li>
+
+                <% breadcrumbs.forEach(function(crumb) { %>
+                    <li>
+                        <a href="<%= crumb.link %>">
+                            <%= crumb.title %>
+                        </a>
+                    </li>
+                <% }); %>
+
+                <li class="text-neutral-400">
+                    <%= title %>
+                </li>
+            </ul>
+        </div>
+
+        <h1 class="text-4xl font-bold text-stone-300">
+            <%= title %>
+        </h1>
+    </div>
+</header>
