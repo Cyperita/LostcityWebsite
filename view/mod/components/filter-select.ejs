@@ -1,0 +1,13 @@
+<fieldset class="fieldset p-0">
+    <legend class="fieldset-legend">
+        <i data-lucide="<%= icon %>" class="size-5 text-stone-400"></i>
+        <%= label %>
+    </legend>
+
+    <select name="<%= name %>" class="select select-sm max-w-60">
+        <option value="">All</option>
+        <% Object.keys(options).forEach(function(option) { %>
+            <option value="<%= option %>" <%= option === selected ? 'selected' : '' %>><%= options[option] %></option>
+        <% }); %>
+    </select>
+</fieldset>
