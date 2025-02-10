@@ -1,0 +1,8 @@
+<th>
+    <a href="?<%= filtersQuery ? filtersQuery + '&' : '' %>sort=<%= sort %>&order=<%= (filters.sort || defaultSort) === sort && (filters.order || defaultOrder) === 'asc' ? 'desc' : 'asc' %>" class="flex gap-1">
+        <%= label %>
+        <% if ((filters.sort || defaultSort) === sort) { %>
+            <i data-lucide="<%= (filters.order || defaultOrder) === 'asc' ? 'arrow-up' : 'arrow-down' %>" class="size-5"></i>
+        <% } %>
+    </a>
+</th>
