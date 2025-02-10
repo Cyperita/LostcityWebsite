@@ -112,7 +112,7 @@ export default async function (app: FastifyInstance) {
             const page = parseInt(req.query.page) || 1;
             const limit = 20;
 
-            const filters = extractFilters(req.query, ['start', 'end', 'reason', 'username', 'offender']);
+            const filters = extractFilters(req.query, ['start', 'end', 'reason', 'username', 'offender', 'sort', 'order']);
 
             let baseQuery = applyFilters(
                 db.selectFrom('report').innerJoin('account', 'report.account_id', 'account.id'),
@@ -126,7 +126,6 @@ export default async function (app: FastifyInstance) {
             const reports = await baseQuery
                 .selectAll('report')
                 .select('account.username')
-                .orderBy('timestamp desc')
                 .limit(limit)
                 .offset((page - 1) * limit)
                 .execute();
@@ -138,6 +137,7 @@ export default async function (app: FastifyInstance) {
                 toDisplayCoord,
                 fromNow,
                 formatTime,
+                buildQueryString,
                 account: req.session.account,
                 breadcrumbs: [],
                 sidebarItems: tempHardcodedSidebar,
@@ -147,8 +147,7 @@ export default async function (app: FastifyInstance) {
                 reasons,
                 currentPage: page,
                 totalPages,
-                filters,
-                filtersQuery: buildQueryString(filters, ['page'])
+                filters
             });
         } catch (err) {
             console.error(err);

@@ -26,7 +26,7 @@
                                 label: 'Reporter',
                                 name: 'username',
                                 value: filters.username,
-                                type: 'text',
+                                type: 'search',
                                 placeholder: 'Username...'
                             }) %>
 
@@ -35,10 +35,10 @@
                                 label: 'Offender',
                                 name: 'offender',
                                 value: filters.offender,
-                                type: 'text',
+                                type: 'search',
                                 placeholder: 'Username...'
                             }) %>
-                            
+
                             <%- include('components/filter-select', {
                                 icon: 'gavel',
                                 label: 'Reasons',
@@ -65,6 +65,9 @@
                                 placeholder: ''
                             }) %>
 
+                            <input type="hidden" name="sort" value="<%= filters.sort %>" />
+                            <input type="hidden" name="order" value="<%= filters.order %>" />
+
                             <button class="btn btn-sm btn-primary" type="submit">
                                 <i data-lucide="search" class="size-5"></i>
                             </button>
@@ -81,21 +84,27 @@
                         <table class="table">
                             <thead class="bg-white/5">
                                 <tr>
-                                    <th>Reporter</th>
-                                    <th>Offender</th>
-                                    <th>Reason</th>
-                                    <th>World</th>
+                                    <%- include('components/table-header', { sort: 'username', label: 'Reporter', filters, filtersQuery: buildQueryString(filters, ['sort', 'order']), defaultSort: 'timestamp', defaultOrder: 'desc' }) %>
+                                    <%- include('components/table-header', { sort: 'offender', label: 'Offender', filters, filtersQuery: buildQueryString(filters, ['sort', 'order']), defaultSort: 'timestamp', defaultOrder: 'desc' }) %>
+                                    <%- include('components/table-header', { sort: 'reason', label: 'Reason', filters, filtersQuery: buildQueryString(filters, ['sort', 'order']), defaultSort: 'timestamp', defaultOrder: 'desc' }) %>
+                                    <%- include('components/table-header', { sort: 'world', label: 'World', filters, filtersQuery: buildQueryString(filters, ['sort', 'order']), defaultSort: 'timestamp', defaultOrder: 'desc' }) %>
                                     <th>Coords</th>
-                                    <th>Date</th>
+                                    <%- include('components/table-header', { sort: 'timestamp', label: 'Date', filters, filtersQuery: buildQueryString(filters, ['sort', 'order']), defaultSort: 'timestamp', defaultOrder: 'desc' }) %>
                                 </tr>
                             </thead>
                             <tbody>
                                 <% reports.forEach(function(report) { %>
                                 <tr>
-                                    <td><a href="/mod/overview/<%= report.username %>"
-                                            class="link"><%= toDisplayName(report.username) %></a></td>
-                                    <td><a href="/mod/overview/<%= report.offender %>"
-                                            class="link"><%= toDisplayName(report.offender) %></a></td>
+                                    <td>
+                                        <a href="/mod/overview/<%= report.username %>" class="link">
+                                            <%= toDisplayName(report.username) %>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="/mod/overview/<%= report.offender %>" class="link">
+                                            <%= toDisplayName(report.offender) %>
+                                        </a>
+                                    </td>
                                     <td><em><%= reasons[report.reason] %></em></td>
                                     <td><%= report.world - 9 %></td>
                                     <td><%= toDisplayCoord(report.coord) %></td>
@@ -110,7 +119,7 @@
                         </table>
                     </div>
 
-                    <%- include('components/pagination.ejs', { currentPage: currentPage, totalPages: totalPages }); %>
+                    <%- include('components/pagination.ejs', { currentPage: currentPage, totalPages: totalPages, filtersQuery: buildQueryString(filters, ['page']) }); %>
                 </div>
             </div>
         </div>
