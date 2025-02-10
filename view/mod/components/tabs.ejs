@@ -1,0 +1,7 @@
+<div class="grid flex-1 auto-cols-fr gap-y-8">
+  <div role="tablist" class="tabs tabs-lift">
+    <% tabs.forEach(tab => { %>
+      <a role="tab" class="tab<%- tab.active ? ' tab-active' : '' %>" href="<%= tab.href %>"><%= tab.text %></a>
+    <% }); %>
+  </div>
+</div>

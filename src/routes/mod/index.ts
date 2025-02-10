@@ -1,6 +1,6 @@
 import fs from 'fs';
 
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyRequest } from 'fastify';
 
 import { db, toDbDate, buildQueryString } from '#/db/query.js';
 import { toDisplayName, toSafeName } from '#/jstring/JString.js';
@@ -27,9 +27,9 @@ const reasons = [
 ];
 
 const tempHardcodedSidebar = [
-    { icon: 'layout-grid', title: 'Overview', link: '/mod' , active: true },
-    { icon: 'flag', title: 'Reports', badge: '26', link: '/mod/reports' },
-    { icon: 'user-search' , title: 'Search Users' , link: '/mod/search' }
+    { icon: 'layout-grid', title: 'Summary (fake data)', link: '/mod' },
+    { icon: 'flag', title: 'Reports'/*, badge: '26' */, link: '/mod/reports' }, // TODO: Dynamically add badge
+    { icon: 'user-search', title: 'Search Users', link: '/mod/search' }
 ];
 
 const tempHardcodedDashboardCards = [
@@ -37,6 +37,25 @@ const tempHardcodedDashboardCards = [
     { title: 'Accounts Created', value: '+827', icon: 'user-plus', color: 'success' },
     { title: 'Wealth Added', value: '+3M', icon: 'coins', color: 'warning' }
 ];
+
+function generateOverviewTabs(account: any, activeUrl: string) {
+    const baseTabs = [
+        { text: 'Summary', href: `/mod/overview/${account.username}` },
+        { text: 'Sessions', href: `/mod/overview/sessions/${account.username}` },
+        { text: 'Public Chats', href: `/mod/overview/chats/public/${account.username}` },
+        { text: 'Private Chats', href: `/mod/overview/chats/private/${account.username}` },
+        { text: 'Events', href: `/mod/overview/events/${account.username}` },
+        { text: 'Wealth Events', href: `/mod/overview/events/wealth/${account.username}` }
+    ];
+
+    return baseTabs.map(tab => {
+        const baseTab: any = { ...tab };
+        if (baseTab.href.toLowerCase() === activeUrl.toLocaleLowerCase()) {
+            baseTab.active = true;
+        }
+        return baseTab
+    });
+}
 
 export default async function (app: FastifyInstance) {
     app.get('/', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
@@ -71,6 +90,105 @@ export default async function (app: FastifyInstance) {
             title: `${toDisplayName(account.username)} Overview`,
             breadcrumbs: [],
             sidebarItems: tempHardcodedSidebar,
+            generatedTabs: generateOverviewTabs(account, req.locals.url)
+        });
+    });
+
+    app.get('/overview/sessions/:username', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
+        const { username } = req.params;
+        const account = await db.selectFrom('account').where('username', '=', username).selectAll().executeTakeFirst();
+
+        if (!account) {
+            return res.view('mod/notfound', {
+                username
+            });
+        }
+
+        return res.view('mod/overview-tab', {
+            toDisplayName,
+            toDisplayCoord,
+            account,
+            title: `${toDisplayName(account.username)} Sessions`,
+            breadcrumbs: [],
+            sidebarItems: tempHardcodedSidebar,
+            generatedTabs: generateOverviewTabs(account, req.locals.url)
+        });
+    });
+
+    app.get('/overview/chats/public/:username', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
+        const { username } = req.params;
+        const account = await db.selectFrom('account').where('username', '=', username).selectAll().executeTakeFirst();
+
+        if (!account) {
+            return res.view('mod/notfound', {
+                username
+            });
+        }
+        return res.view('mod/overview-tab', {
+            toDisplayName,
+            toDisplayCoord,
+            account,
+            title: `${toDisplayName(account.username)} Public Chats`,
+            breadcrumbs: [],
+            sidebarItems: tempHardcodedSidebar,
+            generatedTabs: generateOverviewTabs(account, req.locals.url)
+        });
+    });
+    app.get('/overview/chats/private/:username', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
+        const { username } = req.params;
+        const account = await db.selectFrom('account').where('username', '=', username).selectAll().executeTakeFirst();
+
+        if (!account) {
+            return res.view('mod/notfound', {
+                username
+            });
+        }
+        return res.view('mod/overview-tab', {
+            toDisplayName,
+            toDisplayCoord,
+            account,
+            title: `${toDisplayName(account.username)} Private Chats`,
+            breadcrumbs: [],
+            sidebarItems: tempHardcodedSidebar,
+            generatedTabs: generateOverviewTabs(account, req.locals.url)
+        });
+    });
+    app.get('/overview/events/wealth/:username', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
+        const { username } = req.params;
+        const account = await db.selectFrom('account').where('username', '=', username).selectAll().executeTakeFirst();
+
+        if (!account) {
+            return res.view('mod/notfound', {
+                username
+            });
+        }
+        return res.view('mod/overview-tab', {
+            toDisplayName,
+            toDisplayCoord,
+            account,
+            title: `${toDisplayName(account.username)} Wealth Events`,
+            breadcrumbs: [],
+            sidebarItems: tempHardcodedSidebar,
+            generatedTabs: generateOverviewTabs(account, req.locals.url)
+        });
+    });
+    app.get('/overview/events/:username', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
+        const { username } = req.params;
+        const account = await db.selectFrom('account').where('username', '=', username).selectAll().executeTakeFirst();
+
+        if (!account) {
+            return res.view('mod/notfound', {
+                username
+            });
+        }
+        return res.view('mod/overview-tab', {
+            toDisplayName,
+            toDisplayCoord,
+            account,
+            title: `${toDisplayName(account.username)} Events`,
+            breadcrumbs: [],
+            sidebarItems: tempHardcodedSidebar,
+            generatedTabs: generateOverviewTabs(account, req.locals.url)
         });
     });
 
