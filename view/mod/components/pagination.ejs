@@ -1,4 +1,4 @@
-<div class="flex justify-between items-center p-4">
+<div class="flex flex-wrap justify-between items-center gap-2 p-4">
     <div class="join">
         <% if (currentPage > 1) { %>
         <a href="?<%= filtersQuery ? filtersQuery + '&' : '' %>page=<%= currentPage - 1 %>" class="join-item btn">Previous</a>
@@ -29,5 +29,23 @@
         <% } %>
     </div>
 
-    <span>Page <%= currentPage %> of <%= totalPages %></span>
+    <div class="flex items-center gap-2">
+        <form method="GET" class="flex items-center gap-2">
+            <label for="limit">Show:</label>
+            <select name="limit" id="limit" class="select select-sm" onchange="this.form.submit()">
+                <% [10, 25, 50, 100].forEach(function(option) { %>
+                    <option value="<%= option %>" <%= option === limit ? 'selected' : '' %>><%= option %></option>
+                <% }) %>
+            </select>
+        
+            <% Object.keys(filters).forEach(function(key) { %>
+                <% if (filters[key] && key !== 'limit' && key !== 'page') { %>
+                    <input type="hidden" name="<%= key %>" value="<%= filters[key] %>">
+                <% } %>
+            <% }) %>
+        </form>
+
+        <span>Page <%= currentPage %> of <%= totalPages %></span>
+    </div>
+
 </div>

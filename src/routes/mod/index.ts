@@ -110,7 +110,7 @@ export default async function (app: FastifyInstance) {
     app.get('/reports', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
         try {
             const page = parseInt(req.query.page) || 1;
-            const limit = 20;
+            const limit = parseInt(req.query.limit) || 25;
 
             const filters = extractFilters(req.query, ['start', 'end', 'reason', 'username', 'offender', 'sort', 'order']);
 
@@ -147,7 +147,8 @@ export default async function (app: FastifyInstance) {
                 reasons,
                 currentPage: page,
                 totalPages,
-                filters
+                filters,
+                limit
             });
         } catch (err) {
             console.error(err);

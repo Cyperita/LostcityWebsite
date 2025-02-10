@@ -67,6 +67,7 @@
 
                             <input type="hidden" name="sort" value="<%= filters.sort %>" />
                             <input type="hidden" name="order" value="<%= filters.order %>" />
+                            <input type="hidden" name="limit" value="<%= limit %>" />
 
                             <button class="btn btn-sm btn-primary" type="submit">
                                 <i data-lucide="search" class="size-5"></i>
@@ -119,7 +120,7 @@
                         </table>
                     </div>
 
-                    <%- include('components/pagination.ejs', { currentPage: currentPage, totalPages: totalPages, filtersQuery: buildQueryString(filters, ['page']) }); %>
+                    <%- include('components/pagination.ejs', { currentPage: currentPage, totalPages: totalPages, filters, filtersQuery: buildQueryString(filters, ['page']), limit }); %>
                 </div>
             </div>
         </div>
