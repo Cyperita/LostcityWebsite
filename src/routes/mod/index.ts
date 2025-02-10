@@ -9,6 +9,7 @@ import { isUsernameExplicit, isUsernameValid } from '#/util/Username.js';
 import { requiresStaffLevel } from '#/util/Authentication.js';
 import { toAbsolute, toCoord, toDisplayCoord } from '#/util/Map.js';
 import { fromNow, formatTime } from '#/util/Timestamp.js';
+import { applyFilters, extractFilters } from '#/util/Filters.js';
 
 const reasons = [
     'Offensive language',
@@ -111,32 +112,12 @@ export default async function (app: FastifyInstance) {
             const page = parseInt(req.query.page) || 1;
             const limit = 20;
 
-            const filters = {
-                start: req.query.start || '',
-                end: req.query.end || '',
-                reason: req.query.reason || '',
-                username: req.query.username || '',
-                offender: req.query.offender || ''
-            };
+            const filters = extractFilters(req.query, ['start', 'end', 'reason', 'username', 'offender']);
 
-            let baseQuery = db.selectFrom('report')
-            .innerJoin('account', 'report.account_id', 'account.id');
-
-            if (filters.start) {
-                baseQuery = baseQuery.where('timestamp', '>=', toDbDate(filters.start));
-            }
-            if (filters.end) {
-                baseQuery = baseQuery.where('timestamp', '<=', toDbDate(filters.end));
-            }
-            if (filters.reason) {
-                baseQuery = baseQuery.where('reason', '=', filters.reason);
-            }
-            if (filters.username) {
-                baseQuery = baseQuery.where('account.username', '=', toSafeName(filters.username));
-            }
-            if (filters.offender) {
-                baseQuery = baseQuery.where('offender', '=', toSafeName(filters.offender));
-            }
+            let baseQuery = applyFilters(
+                db.selectFrom('report').innerJoin('account', 'report.account_id', 'account.id'),
+                filters
+            );
 
             const totalRecords = await baseQuery
                 .select(({ fn }) => fn.countAll().as('count'))
