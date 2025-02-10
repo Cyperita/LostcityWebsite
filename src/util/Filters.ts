@@ -10,7 +10,9 @@ export function extractFilters(query: Record<string, any>, keys: string[]): Reco
 
 export function applyFilters<DB>(
     query: SelectQueryBuilder<DB, keyof DB, any>,
-    filters: Record<string, string>
+    filters: Record<string, string>,
+    defaultSort: string = 'timestamp',
+    defaultOrder: 'asc' | 'desc' = 'desc'
 ) {
     if (filters.start) query = query.where('timestamp' as any, '>=', toDbDate(filters.start));
     if (filters.end) query = query.where('timestamp' as any, '<=', toDbDate(filters.end));
@@ -18,5 +20,9 @@ export function applyFilters<DB>(
     if (filters.username) query = query.where('account.username' as any, '=', filters.username);
     if (filters.offender) query = query.where('offender' as any, '=', filters.offender);
 
+    const sortField = filters.sort ?? defaultSort;
+    const sortOrder = filters.order === 'asc' || filters.order === 'desc' ? filters.order : defaultOrder;
+
+    query = query.orderBy(sortField, sortOrder);
     return query;
 }
