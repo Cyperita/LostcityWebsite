@@ -132,10 +132,10 @@ export default async function (app: FastifyInstance) {
                 baseQuery = baseQuery.where('reason', '=', filters.reason);
             }
             if (filters.username) {
-                baseQuery = baseQuery.where('account.username', '=', filters.username);
+                baseQuery = baseQuery.where('account.username', '=', toSafeName(filters.username));
             }
             if (filters.offender) {
-                baseQuery = baseQuery.where('offender', '=', filters.offender);
+                baseQuery = baseQuery.where('offender', '=', toSafeName(filters.offender));
             }
 
             const totalRecords = await baseQuery
