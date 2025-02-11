@@ -9,7 +9,7 @@ import { isUsernameExplicit, isUsernameValid } from '#/util/Username.js';
 import { requiresStaffLevel } from '#/util/Authentication.js';
 import { toAbsolute, toCoord, toDisplayCoord } from '#/util/Map.js';
 import { fromNow, formatTime } from '#/util/Timestamp.js';
-import { applyFilters, extractFilters } from '#/util/Filters.js';
+import { applyChatFilters, applyReportFilters, extractFilters } from '#/util/Filters.js';
 
 const reasons = [
     'Offensive language',
@@ -38,19 +38,19 @@ const tempHardcodedDashboardCards = [
     { title: 'Wealth Added', value: '+3M', icon: 'coins', color: 'warning' }
 ];
 
-function generateOverviewTabs(account: any, activeUrl: string) {
+function generateOverviewSidebar(account: any, activeUrl: string) {
     const baseTabs = [
-        { text: 'Summary', href: `/mod/overview/${account.username}` },
-        { text: 'Sessions', href: `/mod/overview/sessions/${account.username}` },
-        { text: 'Public Chats', href: `/mod/overview/chats/public/${account.username}` },
-        { text: 'Private Chats', href: `/mod/overview/chats/private/${account.username}` },
-        { text: 'Events', href: `/mod/overview/events/${account.username}` },
-        { text: 'Wealth Events', href: `/mod/overview/events/wealth/${account.username}` }
+        { icon: 'chart-no-axes-gantt', title: 'Summary', link: `/mod/overview/${account.username}` },
+        { icon: 'network', title: 'Sessions', link: `/mod/overview/sessions/${account.username}` },
+        { icon: 'message-square-more', title: 'Public Chats', link: `/mod/overview/chats/public/${account.username}` },
+        { icon: 'message-square-lock', title: 'Private Chats', link: `/mod/overview/chats/private/${account.username}` },
+        { icon: 'arrow-down-up', title: 'Events', link: `/mod/overview/events/${account.username}` },
+        { icon: 'coins', title: 'Wealth Events', link: `/mod/overview/events/wealth/${account.username}` }
     ];
 
     return baseTabs.map(tab => {
         const baseTab: any = { ...tab };
-        if (baseTab.href.toLowerCase() === activeUrl.toLocaleLowerCase()) {
+        if (baseTab.link.toLowerCase() === activeUrl.toLocaleLowerCase()) {
             baseTab.active = true;
         }
         return baseTab
@@ -88,8 +88,8 @@ export default async function (app: FastifyInstance) {
             account,
             title: `${toDisplayName(account.username)} Overview`,
             breadcrumbs: [],
-            sidebarItems: tempHardcodedSidebar,
-            generatedTabs: generateOverviewTabs(account, req.locals.url)
+            sidebarItems: generateOverviewSidebar(account, req.locals.url),
+            partial: 'summary'
         });
     });
 
@@ -103,14 +103,14 @@ export default async function (app: FastifyInstance) {
             });
         }
 
-        return res.view('mod/overview-tab', {
+        return res.view('mod/overview', {
             toDisplayName,
             toDisplayCoord,
             account,
             title: `${toDisplayName(account.username)} Sessions`,
             breadcrumbs: [],
-            sidebarItems: tempHardcodedSidebar,
-            generatedTabs: generateOverviewTabs(account, req.locals.url)
+            sidebarItems: generateOverviewSidebar(account, req.locals.url),
+            partial: 'sessions'
         });
     });
 
@@ -123,14 +123,44 @@ export default async function (app: FastifyInstance) {
                 username
             });
         }
-        return res.view('mod/overview-tab', {
+        
+        const page = parseInt(req.query.page) || 1,
+              limit = parseInt(req.query.limit) || 25;
+        
+        const filters = extractFilters(req.query, ['start', 'end', 'message', 'sort', 'order']);
+
+        let baseQuery = applyChatFilters(
+            db.selectFrom('public_chat').where('account_id', '=', account.id),
+            filters
+        );
+        
+        const totalRecords = await baseQuery
+            .select(db.fn.countAll().as('count'))
+            .executeTakeFirst();
+        
+        const messages = await baseQuery
+            .selectAll('public_chat')
+            .limit(limit)
+            .offset((page - 1) * limit)
+            .execute();
+        
+        const totalPages = totalRecords ? Math.ceil(Number(totalRecords.count) / limit) : 0;
+        
+        return res.view('mod/overview', {
             toDisplayName,
             toDisplayCoord,
-            account,
+            fromNow,
+            buildQueryString,
+            formatTime,
             title: `${toDisplayName(account.username)} Public Chats`,
             breadcrumbs: [],
-            sidebarItems: tempHardcodedSidebar,
-            generatedTabs: generateOverviewTabs(account, req.locals.url)
+            sidebarItems: generateOverviewSidebar(account, req.locals.url),
+            partial: 'public-chats',
+            totalRecords,
+            messages,
+            totalPages,
+            filters,
+            limit,
         });
     });
     app.get('/overview/chats/private/:username', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
@@ -142,14 +172,44 @@ export default async function (app: FastifyInstance) {
                 username
             });
         }
-        return res.view('mod/overview-tab', {
+        
+        const page = parseInt(req.query.page) || 1,
+              limit = parseInt(req.query.limit) || 25;
+        
+        const filters = extractFilters(req.query, ['start', 'end', 'message', 'sort', 'order']);
+
+        let baseQuery = applyChatFilters(
+            db.selectFrom('private_chat').where('account_id', '=', account.id),
+            filters
+        );
+        
+        const totalRecords = await baseQuery
+            .select(db.fn.countAll().as('count'))
+            .executeTakeFirst();
+        
+        const messages = await baseQuery
+            .selectAll('private_chat')
+            .limit(limit)
+            .offset((page - 1) * limit)
+            .execute();
+        
+        const totalPages = totalRecords ? Math.ceil(Number(totalRecords.count) / limit) : 0;
+        
+        return res.view('mod/overview', {
             toDisplayName,
             toDisplayCoord,
-            account,
+            fromNow,
+            buildQueryString,
+            formatTime,
             title: `${toDisplayName(account.username)} Private Chats`,
             breadcrumbs: [],
-            sidebarItems: tempHardcodedSidebar,
-            generatedTabs: generateOverviewTabs(account, req.locals.url)
+            sidebarItems: generateOverviewSidebar(account, req.locals.url),
+            partial: 'private-chats',
+            totalRecords,
+            messages,
+            totalPages,
+            filters,
+            limit,
         });
     });
     app.get('/overview/events/wealth/:username', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
@@ -161,14 +221,14 @@ export default async function (app: FastifyInstance) {
                 username
             });
         }
-        return res.view('mod/overview-tab', {
+        return res.view('mod/overview', {
             toDisplayName,
             toDisplayCoord,
             account,
             title: `${toDisplayName(account.username)} Wealth Events`,
             breadcrumbs: [],
-            sidebarItems: tempHardcodedSidebar,
-            generatedTabs: generateOverviewTabs(account, req.locals.url)
+            sidebarItems: generateOverviewSidebar(account, req.locals.url),
+            partial: 'wealth-events'
         });
     });
     app.get('/overview/events/:username', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
@@ -180,14 +240,14 @@ export default async function (app: FastifyInstance) {
                 username
             });
         }
-        return res.view('mod/overview-tab', {
+        return res.view('mod/overview', {
             toDisplayName,
             toDisplayCoord,
             account,
             title: `${toDisplayName(account.username)} Events`,
             breadcrumbs: [],
-            sidebarItems: tempHardcodedSidebar,
-            generatedTabs: generateOverviewTabs(account, req.locals.url)
+            sidebarItems: generateOverviewSidebar(account, req.locals.url),
+            partial: 'events'
         });
     });
 
@@ -231,7 +291,7 @@ export default async function (app: FastifyInstance) {
 
             const filters = extractFilters(req.query, ['start', 'end', 'reason', 'username', 'offender', 'sort', 'order']);
 
-            let baseQuery = applyFilters(
+            let baseQuery = applyReportFilters(
                 db.selectFrom('report').innerJoin('account', 'report.account_id', 'account.id'),
                 filters
             );

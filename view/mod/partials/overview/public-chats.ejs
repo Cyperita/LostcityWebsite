@@ -1,0 +1,72 @@
+<div class="p-4">
+  <h2 class="text-lg font-bold">Filter:</h2>
+
+  <form class="flex flex-wrap flex-row items-end gap-2" method="get">
+    <%- include('mod/components/filter-input', {
+      icon: 'message-square',
+      label: 'Messsage',
+      name: 'message',
+      value: filters.message,
+      type: 'search',
+      placeholder: 'Message...'
+    }); %>
+
+    <%- include('mod/components/filter-input', {
+      icon: 'calendar',
+      label: 'Start Date',
+      name: 'start',
+      value: filters.start,
+      type: 'date',
+      placeholder: ''
+    }); %>
+
+    <%- include('mod/components/filter-input', {
+      icon: 'calendar',
+      label: 'End Date',
+      name: 'end',
+      value: filters.end,
+      type: 'date',
+      placeholder: ''
+    }); %>
+
+    <input type="hidden" name="sort" value="<%= filters.sort %>" />
+    <input type="hidden" name="order" value="<%= filters.order %>" />
+    <input type="hidden" name="limit" value="<%= limit %>" />
+
+    <button class="btn btn-sm btn-primary" type="submit">
+      <i data-lucide="search" class="size-5"></i>
+    </button>
+    <span class="tooltip" data-tip="Reset Filters">
+      <a href="/mod/overview/chats/public/<%= account.username %>" class="btn btn-sm">
+        <i data-lucide="x" class="size-5"></i>
+      </a>
+    </span>
+  </form>
+</div>
+
+<div class="overflow-x-auto md:overflow-visible">
+  <table class="table">
+    <thead class="bg-white/S">
+      <tr>
+        <%- include('mod/components/table-header', { sort: 'world', label: 'World', filters, filtersQuery: buildQueryString(filters, ['sort', 'order']), defaultSort: 'timestamp', defaultOrder: 'desc' }) %>
+        <th>Coords</th>
+        <th>Message</th>
+        <%- include('mod/components/table-header', { sort: 'timestamp', label: 'Date', filters, filtersQuery: buildQueryString(filters, ['sort', 'order']), defaultSort: 'timestamp', defaultOrder: 'desc' }) %>
+      </tr>
+    </thead>
+    <tbody>
+      <% messages.forEach((message) => { %>
+      <tr>
+        <td><%= message.world - 9 %></td>
+        <td><%= toDisplayCoord(message.coord) %></td>
+        <td><%= message.message %></td>
+        <td>
+          <div class="md:tooltip" data-tip="<%= formatTime(message.timestamp) %>">
+            <%= fromNow(message.timestamp) %>
+          </div>
+        </td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</div>

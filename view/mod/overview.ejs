@@ -13,18 +13,11 @@
 
       <div class="grid flex-1 auto-cols-fr gap-y-8">
         <div class="card bg-base-100 w-full">
-          <div class="p-4">
-            <%- include('components/tabs.ejs', { tabs: generatedTabs }); %>
-          </div>
-
-          <div class="overflow-x-auto md:overflow-visible">
-            TODO: Come up with a summary for player
-          </div>
+          <%- include(`partials/overview/${partial}`) %>
         </div>
       </div>
     </div>
   </section>
-  <%- include('../_scripts/mod/searchable-table', ); %>
   <%- include('partials/footer.ejs'); %>
 </body>
 
