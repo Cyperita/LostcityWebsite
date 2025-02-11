@@ -61,7 +61,6 @@ export default async function (app: FastifyInstance) {
     app.get('/', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
         try {
             return res.view('mod/index', {
-                account: req.session.account,
                 breadcrumbs: [],
                 sidebarItems: tempHardcodedSidebar,
                 exampleDashboardCards: tempHardcodedDashboardCards,
@@ -256,7 +255,6 @@ export default async function (app: FastifyInstance) {
                 fromNow,
                 formatTime,
                 buildQueryString,
-                account: req.session.account,
                 breadcrumbs: [],
                 sidebarItems: tempHardcodedSidebar,
                 exampleDashboardCards: tempHardcodedDashboardCards,

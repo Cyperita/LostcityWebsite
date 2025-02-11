@@ -49,6 +49,20 @@ fastify.setErrorHandler(function (error, request, reply) {
     }
 })
 
+// Automatically include account in view data
+fastify.addHook('onRequest', (req, res, done) => {
+    const originalView = res.view;
+
+    res.view = function (template: any, data = {}) {
+        return originalView.call(this, template, {
+            ...data,
+            account: req.session.account
+        });
+    };
+
+    done();
+});
+
 await fastify.register(Autoload, {
     dir: 'src/routes',
     forceESM: true
