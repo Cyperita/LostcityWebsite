@@ -1,4 +1,5 @@
 import type { ColumnType } from 'kysely';
+import { toDisplayName } from '#/jstring/JString.js';
 export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   ? ColumnType<S, I | undefined, U>
   : ColumnType<T, T | undefined, T>;
@@ -113,6 +114,7 @@ export type DB = {
 };
 
 export function sanitize_account(account: any) {
-    const { password, registration_ip, ...saniziedAccount } = account;
-    return saniziedAccount;
+    const { password, registration_ip, ...sanitizedAccount } = account;
+    sanitizedAccount.username = toDisplayName(account.username);
+    return sanitizedAccount;
 }
