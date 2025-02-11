@@ -19,6 +19,14 @@ const fastify = Fastify({
 fastify.register(FormBody);
 fastify.register(Multipart);
 
+// God forbid fastify just have this built in and you don't need to add a new plugin for it
+fastify.addHook('onRequest', (request: any, reply: any, done) => {
+    request.locals = {
+        url: request.url.split('?')[0]
+    };
+    done();
+});
+
 fastify.register(Static, {
     root: path.join(process.cwd(), 'public')
 });
