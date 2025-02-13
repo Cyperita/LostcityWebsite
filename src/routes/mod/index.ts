@@ -11,30 +11,6 @@ import { toAbsolute, toCoord, toDisplayCoord } from '#/util/Map.js';
 import { fromNow, formatTime } from '#/util/Timestamp.js';
 import { applyChatFilters, applyReportFilters, extractFilters } from '#/util/Filters.js';
 
-function toDisplayCoord(coord: number) {
-    const level = (coord >> 28) & 0x3;
-    const x = (coord >> 14) & 0x3fff;
-    const z = coord & 0x3fff;
-
-    const mx = (x / 64) | 0;
-    const mz = (z / 64) | 0;
-    const lx = x % 64;
-    const lz = z % 64;
-    return `${level}_${mx}_${mz}_${lx}_${lz}`;
-}
-
-function toAbsolute(coord: number) {
-    const level = (coord >> 28) & 0x3;
-    const x = (coord >> 14) & 0x3fff;
-    const z = coord & 0x3fff;
-
-    return { level, x, z };
-}
-
-function toCoord(level: number, x: number, z: number) {
-    return (level << 28) | (x << 14) | z;
-}
-
 function embedCoord(coord: number) {
     const { level, x, z } = toAbsolute(coord);
     return `https://mejrs.github.io/historical?era=rs2_2004_06_01&p=${level}&x=${x}&y=${z}&z=4&layer=grid`;
@@ -313,28 +289,6 @@ export default async function (app: FastifyInstance) {
             res.redirect('/', 302);
         }
     });
-
-    app.post('/note/:username', async (req: any, res: any) => {
-        try {
-            const { username } = req.params;
-
-            if (!req.session.account || req.session.account.staffmodlevel < 1) {
-                return res.redirect(`/account/login?redirectUrl=/mod/overview/${username}`, 302);
-            }
-
-            const { notes } = req.body;
-
-            await db.updateTable('account').set({
-                notes,
-                notes_updated: toDbDate(new Date())
-            }).where('username', '=', username).execute();
-
-            return res.redirect(`/mod/overview/${username}`, 302);
-        } catch (err) {
-            console.error(err);
-            res.redirect('/', 302);
-        }
-    })
 
     app.post('/note/:username', async (req: any, res: any) => {
         try {
