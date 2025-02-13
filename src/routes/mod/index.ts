@@ -11,6 +11,35 @@ import { toAbsolute, toCoord, toDisplayCoord } from '#/util/Map.js';
 import { fromNow, formatTime } from '#/util/Timestamp.js';
 import { applyChatFilters, applyReportFilters, extractFilters } from '#/util/Filters.js';
 
+function toDisplayCoord(coord: number) {
+    const level = (coord >> 28) & 0x3;
+    const x = (coord >> 14) & 0x3fff;
+    const z = coord & 0x3fff;
+
+    const mx = (x / 64) | 0;
+    const mz = (z / 64) | 0;
+    const lx = x % 64;
+    const lz = z % 64;
+    return `${level}_${mx}_${mz}_${lx}_${lz}`;
+}
+
+function toAbsolute(coord: number) {
+    const level = (coord >> 28) & 0x3;
+    const x = (coord >> 14) & 0x3fff;
+    const z = coord & 0x3fff;
+
+    return { level, x, z };
+}
+
+function toCoord(level: number, x: number, z: number) {
+    return (level << 28) | (x << 14) | z;
+}
+
+function embedCoord(coord: number) {
+    const { level, x, z } = toAbsolute(coord);
+    return `https://mejrs.github.io/historical?era=rs2_2004_06_01&p=${level}&x=${x}&y=${z}&z=4&layer=grid`;
+}
+
 const reasons = [
     'Offensive language',
     'Item scamming',
@@ -265,6 +294,7 @@ export default async function (app: FastifyInstance) {
             return res.view('mod/overview-old', {
                 toDisplayName,
                 toDisplayCoord,
+                embedCoord,
                 account,
                 sessions: await db.selectFrom('session').where('account_id', '=', account.id)
                     .orderBy('timestamp desc').selectAll().execute(),
@@ -283,6 +313,50 @@ export default async function (app: FastifyInstance) {
             res.redirect('/', 302);
         }
     });
+
+    app.post('/note/:username', async (req: any, res: any) => {
+        try {
+            const { username } = req.params;
+
+            if (!req.session.account || req.session.account.staffmodlevel < 1) {
+                return res.redirect(`/account/login?redirectUrl=/mod/overview/${username}`, 302);
+            }
+
+            const { notes } = req.body;
+
+            await db.updateTable('account').set({
+                notes,
+                notes_updated: toDbDate(new Date())
+            }).where('username', '=', username).execute();
+
+            return res.redirect(`/mod/overview/${username}`, 302);
+        } catch (err) {
+            console.error(err);
+            res.redirect('/', 302);
+        }
+    })
+
+    app.post('/note/:username', async (req: any, res: any) => {
+        try {
+            const { username } = req.params;
+
+            if (!req.session.account || req.session.account.staffmodlevel < 1) {
+                return res.redirect(`/account/login?redirectUrl=/mod/overview/${username}`, 302);
+            }
+
+            const { notes } = req.body;
+
+            await db.updateTable('account').set({
+                notes,
+                notes_updated: toDbDate(new Date())
+            }).where('username', '=', username).execute();
+
+            return res.redirect(`/mod/overview/${username}`, 302);
+        } catch (err) {
+            console.error(err);
+            res.redirect('/', 302);
+        }
+    })
 
     app.get('/reports', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
         try {
@@ -312,6 +386,7 @@ export default async function (app: FastifyInstance) {
             return res.view('mod/reports', {
                 toDisplayName,
                 toDisplayCoord,
+                embedCoord,
                 fromNow,
                 formatTime,
                 buildQueryString,
@@ -556,15 +631,62 @@ export default async function (app: FastifyInstance) {
                 return res.redirect(`/account/login?redirectUrl=/mod/wealth/${username}`, 302);
             }
 
+            const account = await db.selectFrom('account')
+                .where('username', '=', username)
+                .selectAll()
+                .executeTakeFirst();
+
+            if (!account) {
+                return res.view('mod/notfound', {
+                    username
+                });
+            }
+
             return res.view('mod/wealth', {
                 toDisplayName,
                 toDisplayCoord,
-                username,
+                embedCoord,
+                account,
                 logs: await db.selectFrom('account_session').select(['timestamp', 'coord', 'event', 'world'])
-                    .innerJoin('account', 'account_session.account_id', 'account.id').select('account.username')
                     .where('profile', '=', 'beta')
-                    .where('username', '=', username)
+                    .where('account_id', '=', account.id)
                     .where('event_type', '=', LoggerEventType.WEALTH)
+                    .orderBy('timestamp desc').execute()
+            });
+        } catch (err) {
+            console.error(err);
+            res.redirect('/', 302);
+        }
+    });
+
+    app.get('/events/:username', async (req: any, res: any) => {
+        try {
+            const { username } = req.params;
+
+            if (!req.session.account || req.session.account.staffmodlevel < 1) {
+                return res.redirect(`/account/login?redirectUrl=/mod/events/${username}`, 302);
+            }
+
+            const account = await db.selectFrom('account')
+                .where('username', '=', username)
+                .selectAll()
+                .executeTakeFirst();
+
+            if (!account) {
+                return res.view('mod/notfound', {
+                    username
+                });
+            }
+
+            return res.view('mod/events', {
+                toDisplayName,
+                toDisplayCoord,
+                embedCoord,
+                account,
+                logs: await db.selectFrom('account_session').select(['timestamp', 'coord', 'event', 'world'])
+                    .where('profile', '=', 'beta')
+                    .where('account_id', '=', account.id)
+                    .where('event_type', '!=', LoggerEventType.WEALTH)
                     .orderBy('timestamp desc').execute()
             });
         } catch (err) {
@@ -596,8 +718,8 @@ export default async function (app: FastifyInstance) {
                 }
             }
 
-            const oneHourBefore = toDbDate(parseInt(timestamp) - (1000 * 60 * 60));
-            const tenMinutesAfter = toDbDate(parseInt(timestamp) + (1000 * 60 * 10));
+            const sixMinutesBefore = toDbDate(parseInt(timestamp) - (1000 * 60 * 6));
+            const sixMinutesAfter = toDbDate(parseInt(timestamp) + (1000 * 60 * 6));
 
             const logs = await db.selectFrom('public_chat').select(['timestamp', 'coord', 'message', 'world'])
                 .innerJoin('account', 'public_chat.account_id', 'account.id').select('account.username')
@@ -608,14 +730,210 @@ export default async function (app: FastifyInstance) {
                         eb('coord', '=', c)
                     )
                 ))
-                .where('timestamp', '<', tenMinutesAfter)
-                .where('timestamp', '>', oneHourBefore)
+                .where('timestamp', '<', sixMinutesAfter)
+                .where('timestamp', '>', sixMinutesBefore)
                 .orderBy('timestamp desc').execute();
 
             return res.view('mod/chat', {
                 toDisplayName,
                 toDisplayCoord,
+                embedCoord,
                 logs
+            });
+        } catch (err) {
+            console.error(err);
+            res.redirect('/', 302);
+        }
+    });
+
+    app.get('/item', async (req: any, res: any) => {
+        try {
+            const { coord, world, timestamp } = req.query;
+
+            if (!req.session.account || req.session.account.staffmodlevel < 1) {
+                return res.redirect(`/account/login?redirectUrl=/mod/item?coord=${coord}&world=${world}&timestamp=${timestamp}`, 302);
+            }
+
+            if (typeof coord === 'undefined' || typeof world === 'undefined' || typeof timestamp === 'undefined') {
+                return res.redirect('/', 302);
+            }
+
+            const center = toAbsolute(coord);
+            const topLeft = { level: center.level, x: center.x - 10, z: center.z - 10 };
+            const bottomRight = { level: center.level, x: center.x + 10, z: center.z + 10 };
+
+            const allCoords: number[] = [];
+            for (let x = topLeft.x; x <= bottomRight.x; x++) {
+                for (let z = topLeft.z; z <= bottomRight.z; z++) {
+                    allCoords.push(toCoord(center.level, x, z));
+                }
+            }
+
+            const sixMinutesBefore = toDbDate(parseInt(timestamp) - (1000 * 60 * 6));
+            const sixMinutesAfter = toDbDate(parseInt(timestamp) + (1000 * 60 * 6));
+
+            const logs = await db.selectFrom('account_session').select(['timestamp', 'coord', 'event', 'world'])
+                .innerJoin('account', 'account_session.account_id', 'account.id').select('account.username')
+                .where('profile', '=', 'beta')
+                .where('world', '=', world)
+                .where('event_type', '=', LoggerEventType.WEALTH)
+                .where((eb: any) => eb.or(
+                    allCoords.map(c =>
+                        eb('coord', '=', c)
+                    )
+                ))
+                .where('timestamp', '<', sixMinutesAfter)
+                .where('timestamp', '>', sixMinutesBefore)
+                .orderBy('timestamp desc').execute();
+
+            return res.view('mod/item', {
+                toDisplayName,
+                toDisplayCoord,
+                embedCoord,
+                logs
+            });
+        } catch (err) {
+            console.error(err);
+            res.redirect('/', 302);
+        }
+    });
+
+    app.get('/public/:username', async (req: any, res: any) => {
+        try {
+            const { username } = req.params;
+
+            if (!req.session.account || req.session.account.staffmodlevel < 1) {
+                return res.redirect(`/account/login?redirectUrl=/mod/public/${username}`, 302);
+            }
+
+            const account = await db.selectFrom('account')
+                .where('username', '=', username)
+                .selectAll()
+                .executeTakeFirst();
+
+            if (!account) {
+                return res.view('mod/notfound', {
+                    username
+                });
+            }
+
+            return res.view('mod/public', {
+                toDisplayName,
+                toDisplayCoord,
+                embedCoord,
+                account,
+                chats: await db.selectFrom('public_chat').where('account_id', '=', account.id)
+                    .orderBy('timestamp desc').selectAll().execute(),
+            });
+        } catch (err) {
+            console.error(err);
+            res.redirect('/', 302);
+        }
+    });
+
+    app.get('/private/:username', async (req: any, res: any) => {
+        try {
+            const { username } = req.params;
+
+            if (!req.session.account || req.session.account.staffmodlevel < 1) {
+                return res.redirect(`/account/login?redirectUrl=/mod/private/${username}`, 302);
+            }
+
+            const account = await db.selectFrom('account')
+                .where('username', '=', username)
+                .selectAll()
+                .executeTakeFirst();
+
+            if (!account) {
+                return res.view('mod/notfound', {
+                    username
+                });
+            }
+
+            return res.view('mod/private', {
+                toDisplayName,
+                toDisplayCoord,
+                embedCoord,
+                account,
+                chats: await db.selectFrom('private_chat').where('account_id', '=', account.id)
+                    .leftJoin('account', 'private_chat.to_account_id', 'account.id')
+                    .orderBy('timestamp desc').selectAll().execute(),
+            });
+        } catch (err) {
+            console.error(err);
+            res.redirect('/', 302);
+        }
+    });
+
+    app.get('/conversation', async (req: any, res: any) => {
+        try {
+            const { from, to } = req.query;
+
+            if (!req.session.account || req.session.account.staffmodlevel < 1) {
+                return res.redirect(`/account/login?redirectUrl=/mod/conversation?from=${from}&to=${to}`, 302);
+            }
+
+            const fromAcc = await db.selectFrom('account')
+                .where('username', '=', toSafeName(from))
+                .selectAll()
+                .executeTakeFirst();
+
+            if (!fromAcc) {
+                return res.view('mod/notfound', {
+                    username: from
+                });
+            }
+
+            const toAcc = await db.selectFrom('account')
+                .where('username', '=', toSafeName(to))
+                .selectAll()
+                .executeTakeFirst();
+
+            if (!toAcc) {
+                return res.view('mod/notfound', {
+                    username: to
+                });
+            }
+
+            return res.view('mod/conversation', {
+                toDisplayName,
+                toDisplayCoord,
+                embedCoord,
+                fromAcc,
+                toAcc,
+                pms: await db.selectFrom('private_chat')
+                    .where((eb) => eb.or([
+                        eb('account_id', '=', fromAcc.id),
+                        eb('account_id', '=', toAcc.id)
+                    ]))
+                    .where((eb) => eb.or([
+                        eb('to_account_id', '=', fromAcc.id),
+                        eb('to_account_id', '=', toAcc.id)
+                    ]))
+                    .orderBy('timestamp desc').selectAll().execute(),
+            });
+        } catch (err) {
+            console.error(err);
+            res.redirect('/', 302);
+        }
+    });
+
+    app.get('/recent', async (req: any, res: any) => {
+        try {
+            if (!req.session.account || req.session.account.staffmodlevel < 1) {
+                return res.redirect('/account/login?redirectUrl=/mod/recent', 302);
+            }
+
+            const recent = await db.selectFrom('account').select(['username', 'registration_ip', 'registration_date'])
+                .leftJoin('session', 'account.id', 'session.account_id').select(['ip', 'uid'])
+                .groupBy('id')
+                .orderBy('registration_date', 'desc')
+                .orderBy('timestamp', 'desc')
+                .execute();
+
+            return res.view('mod/recent', {
+                toDisplayName,
+                recent
             });
         } catch (err) {
             console.error(err);

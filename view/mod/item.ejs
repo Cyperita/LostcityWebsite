@@ -1,7 +1,7 @@
-<%- include('../_partial/header.ejs', { title: 'Wealth Log' }); %>
+<%- include('../_partial/header.ejs', { title: 'Item Log' }); %>
 <%- include('../_components/frame-top.ejs'); %>
 <%- include('../_components/content-start.ejs'); %>
-<%- include('../_components/title-box.ejs', { title: account.username + "'s Wealth Log", links: [ { text: 'Overview', href: '/mod/overview/' + account.username } ] }); %>
+<%- include('../_components/title-box.ejs', { title: 'Item Log' }); %>
 
 <%- include('../_components/content-body-start.ejs'); %>
 <div style="height: 500px; overflow-y: scroll">
@@ -18,11 +18,7 @@
 
             <br>
 
-            <%= log.event %>
-
-            <span style="float: right">
-                <a href="/mod/item?coord=<%= log.coord %>&world=<%= log.world %>&timestamp=<%= log.timestamp.getTime() %>">More context</a>
-            </span>
+            <a href="/mod/overview/<%= log.username %>"><%= toDisplayName(log.username); %></a>: <%= log.event %>
         </div>
         <hr>
     <% } %>

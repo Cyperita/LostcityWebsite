@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import fs from 'fs';
+import { pwnedPassword } from 'hibp';
 
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
@@ -53,7 +54,12 @@ export default async function (app: FastifyInstance) {
         });
     });
 
-    app.post('/login', async (req: FastifyRequest<{ Body: LoginRequestBody, Querystring: LoginPageQuery }>, res: FastifyReply) => {
+    app.post('/login', {
+        preHandler: app.rateLimit({
+            max: 1,
+            timeWindow: 1000
+        })
+    }, async (req: FastifyRequest<{ Body: LoginRequestBody, Querystring: LoginPageQuery }>, res: FastifyReply) => {
         const { username, password } = req.body;
 
         const account = await db.selectFrom('account')
@@ -86,6 +92,11 @@ export default async function (app: FastifyInstance) {
 
         if (password !== password2) {
             req.session.error = 'Your passwords do not match.';
+            return res.redirect('/account', 302);
+        }
+
+        if (await pwnedPassword(password)) {
+            req.session.error = 'Your chosen password is too insecure to use.';
             return res.redirect('/account', 302);
         }
 
