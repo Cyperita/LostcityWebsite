@@ -1,0 +1,102 @@
+<html>
+
+<head>
+    <%- include('partials/head-metadata.ejs', { title }); %>
+</head>
+
+<body class="bg-base-200">
+    <%- include('partials/bg-image.ejs'); %>
+    <%- include('partials/navbar'); %>
+
+    <section class="container mx-auto flex flex-col gap-y-8 py-8 px-4 z-10 relative">
+        <%- include('partials/breadcrumbs', { breadcrumbs }); %>
+
+        <div class="flex flex-col gap-8 lg:flex-row lg:items-start">
+            <%- include('components/sidebar.ejs', { items: sidebarItems }); %>
+
+            <div class="grid flex-1 auto-cols-fr gap-y-8">
+                <div class="card bg-base-100 w-full">
+                    <div class="p-4">
+                        <h2 class="text-lg font-bold">Filter:</h2>
+
+                        <form class="flex flex-wrap flex-row items-end gap-2" method="get">
+                            <%- include('components/filter-input', {
+                                icon: 'user',
+                                label: 'Username',
+                                name: 'username',
+                                value: filters.username,
+                                type: 'search',
+                                placeholder: 'Username...'
+                            }) %>
+
+                            <input type="hidden" name="sort" value="<%= filters.sort %>" />
+                            <input type="hidden" name="order" value="<%= filters.order %>" />
+                            <input type="hidden" name="limit" value="<%= limit %>" />
+
+                            <button class="btn btn-sm btn-primary" type="submit">
+                                <i data-lucide="search" class="size-5"></i>
+                            </button>
+
+                            <span class="tooltip" data-tip="Reset Filters">
+                                <a href="/mod/users" class="btn btn-sm">
+                                    <i data-lucide="x" class="size-5"></i>
+                                </a>
+                            </span>
+                        </form>
+                    </div>
+
+                    <div class="overflow-x-auto md:overflow-visible">
+                        <table class="table">
+                            <thead class="bg-white/5">
+                                <tr>
+                                    <th></th>
+                                    <%- include('components/table-header', { sort: 'username', label: 'Username', filters, filtersQuery: buildQueryString(filters, ['sort', 'order']), defaultSort: 'latest_timestamp', defaultOrder: 'desc' }) %>
+                                    <th>IP Address</th>
+                                    <th>UID</th>
+                                    <%- include('components/table-header', { sort: 'latest_timestamp', label: 'Last Login', filters, filtersQuery: buildQueryString(filters, ['sort', 'order']), defaultSort: 'latest_timestamp', defaultOrder: 'desc' }) %>
+                                    <%- include('components/table-header', { sort: 'registration_date', label: 'Registration', filters, filtersQuery: buildQueryString(filters, ['sort', 'order']), defaultSort: 'latest_timestamp', defaultOrder: 'desc' }) %>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% accounts.forEach(function(account) { %>
+                                <tr>
+                                    <td>
+                                        <%- account.logged_in ? '<i data-lucide="check" class="size-5 text-green-500"></i>' : '<i data-lucide="x" class="size-5 text-red-500"></i>' %>
+                                    </td>
+                                    <td>
+                                        <a href="/mod/overview/<%= account.username %>" class="link">
+                                            <%= toDisplayName(account.username) %>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="/mod/ip/<%= account.ip %>" class="link">
+                                            <%= account.ip %>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="/mod/uid/<%= account.uid %>" class="link">
+                                            <%= account.uid %>
+                                        </a>
+                                    <td>
+                                        <div class="md:tooltip" data-tip="<%= formatTime(account.latest_timestamp) %>">
+                                            <%= fromNow(account.latest_timestamp) %>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <%= formatTime(account.registration_date) %>
+                                    </td>
+                                </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <%- include('components/pagination.ejs', { currentPage: currentPage, totalPages: totalPages, filters, filtersQuery: buildQueryString(filters, ['page']), limit }); %>
+                </div>
+            </div>
+        </div>
+    </section>
+    <%- include('partials/footer.ejs'); %>
+</body>
+
+</html>

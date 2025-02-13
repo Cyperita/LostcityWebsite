@@ -917,4 +917,64 @@ export default async function (app: FastifyInstance) {
             res.redirect('/', 302);
         }
     });
+
+    app.get('/users', async (req: any, res: any) => {
+        try {
+            if (!req.session.account || req.session.account.staffmodlevel < 1) {
+                return res.redirect('/account/login?redirectUrl=/mod/users', 302);
+            }
+
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 25;
+
+            const filters = extractFilters(req.query, ['start', 'end', 'username', 'sort', 'order']);
+
+            let baseQuery = applyReportFilters(
+                db.selectFrom('account')
+                .select([
+                    'username',
+                    'registration_ip',
+                    'registration_date',
+                    db.fn.max('session.ip').as('ip'),
+                    db.fn.max('session.uid').as('uid'),
+                    db.fn.max('session.timestamp').as('latest_timestamp')
+                ])
+                .leftJoin('session', 'account.id', 'session.account_id')
+                .groupBy(['account.id', 'username', 'registration_ip', 'registration_date']),
+                filters, 'latest_timestamp'
+            );
+
+            const totalRecords = await baseQuery
+                .select(({ fn }) => fn.countAll().as('count'))
+                .executeTakeFirst();
+
+            const accounts = await baseQuery
+                .limit(limit)
+                .offset((page - 1) * limit)
+                .execute();
+
+            const totalPages = totalRecords ? Math.ceil(Number(totalRecords.count) / limit) : 0;
+
+            return res.view('mod/users', {
+                toDisplayName,
+                toDisplayCoord,
+                embedCoord,
+                fromNow,
+                formatTime,
+                buildQueryString,
+                breadcrumbs: [],
+                sidebarItems: tempHardcodedSidebar,
+                exampleDashboardCards: tempHardcodedDashboardCards,
+                title: 'Users',
+                accounts,
+                currentPage: page,
+                totalPages,
+                filters,
+                limit
+            });
+        } catch (err) {
+            console.error(err);
+            res.redirect('/', 302);
+        }
+    });
 }
