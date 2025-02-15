@@ -111,7 +111,7 @@
                                             <div>
                                                 <span class="text-stone-300 font-semibold">Registration:</span>
 
-                                                <a href="/mod/ip/<%= account.registration_ip %>"
+                                                <a href="?<%= buildQueryString(filters, ['page', 'ip']) ? buildQueryString(filters, ['page', 'ip']) + '&' : '' %>ip=<%= account.registration_ip %>"
                                                     class="link link-hover">
                                                     <%= account.registration_ip %>
                                                 </a>
@@ -120,14 +120,16 @@
                                             <div>
                                                 <span class="text-stone-300 font-semibold">Last Session:</span>
 
-                                                <a href="/mod/ip/<%= account.ip %>" class="link link-hover">
+                                                <a href="?<%= buildQueryString(filters, ['page', 'ip']) ? buildQueryString(filters, ['page', 'ip']) + '&' : '' %>ip=<%= account.ip %>"
+                                                    class="link link-hover">
                                                     <%= account.ip %>
                                                 </a>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <a href="/mod/uid/<%= account.uid %>" class="link link-hover">
+                                        <a href="?<%= buildQueryString(filters, ['page', 'uid']) ? buildQueryString(filters, ['page', 'uid']) + '&' : '' %>uid=<%= account.uid %>"
+                                            class="link link-hover">
                                             <%= account.uid %>
                                         </a>
                                     <td>
