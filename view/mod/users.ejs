@@ -29,19 +29,55 @@
                                 placeholder: 'Username...'
                             }) %>
 
-                            <input type="hidden" name="sort" value="<%= filters.sort %>" />
-                            <input type="hidden" name="order" value="<%= filters.order %>" />
-                            <input type="hidden" name="limit" value="<%= limit %>" />
+                            <%- include('components/filter-select', {
+                                icon: 'circle-check-big',
+                                label: 'Active Status',
+                                name: 'active',
+                                options: [ // TODO: Change this to use values
+                                    'Logged In',
+                                    'Logged Out'
+                                ],
+                                selected: filters.active
+                            }) %>
 
-                            <button class="btn btn-sm btn-primary" type="submit">
-                                <i data-lucide="search" class="size-5"></i>
-                            </button>
+                            <%- include('components/filter-input', {
+                                icon: 'globe',
+                                label: 'IP',
+                                name: 'ip',
+                                value: filters.ip,
+                                type: 'search',
+                                placeholder: 'IP Address...'
+                            }) %>
 
-                            <span class="tooltip" data-tip="Reset Filters">
-                                <a href="/mod/users" class="btn btn-sm">
-                                    <i data-lucide="x" class="size-5"></i>
-                                </a>
-                            </span>
+                            <%- include('components/filter-input', {
+                                icon: 'monitor-smartphone',
+                                label: 'UID',
+                                name: 'uid',
+                                value: filters.uid,
+                                type: 'search',
+                                placeholder: 'UID...'
+                            }) %>
+
+                            <%- include('components/filter-input', { 
+                                icon: 'calendar',
+                                label: 'Registered After',
+                                name: 'start',
+                                value: filters.start,
+                                type: 'date',
+                                placeholder: ''
+                            }) %>
+
+                            <%- include('components/filter-input', { 
+                                icon: 'calendar',
+                                label: 'Registered Before',
+                                name: 'end',
+                                value: filters.end,
+                                type: 'date',
+                                placeholder: ''
+                            }) %>
+
+                            <%- include('components/filter-hidden-inputs', { sort: filters.sort, order: filters.order, limit }); %>
+                            <%- include('components/filter-buttons', { link: '/mod/users' }); %>
                         </form>
                     </div>
 
@@ -49,38 +85,59 @@
                         <table class="table">
                             <thead class="bg-white/5">
                                 <tr>
-                                    <th></th>
-                                    <%- include('components/table-header', { sort: 'username', label: 'Username', filters, filtersQuery: buildQueryString(filters, ['sort', 'order']), defaultSort: 'latest_timestamp', defaultOrder: 'desc' }) %>
+                                    <%- include('components/table-header', { sort: 'username', label: 'Username', filters, filtersQuery: buildQueryString(filters, ['sort', 'order']), defaultSort: 'registration_date', defaultOrder: 'desc' }) %>
                                     <th>IP Address</th>
                                     <th>UID</th>
-                                    <%- include('components/table-header', { sort: 'latest_timestamp', label: 'Last Login', filters, filtersQuery: buildQueryString(filters, ['sort', 'order']), defaultSort: 'latest_timestamp', defaultOrder: 'desc' }) %>
-                                    <%- include('components/table-header', { sort: 'registration_date', label: 'Registration', filters, filtersQuery: buildQueryString(filters, ['sort', 'order']), defaultSort: 'latest_timestamp', defaultOrder: 'desc' }) %>
+                                    <%- include('components/table-header', { sort: 'timestamp', label: 'Last Login', filters, filtersQuery: buildQueryString(filters, ['sort', 'order']), defaultSort: 'registration_date', defaultOrder: 'desc' }) %>
+                                    <%- include('components/table-header', { sort: 'registration_date', label: 'Registration', filters, filtersQuery: buildQueryString(filters, ['sort', 'order']), defaultSort: 'registration_date', defaultOrder: 'desc' }) %>
                                 </tr>
                             </thead>
                             <tbody>
                                 <% accounts.forEach(function(account) { %>
                                 <tr>
-                                    <td>
-                                        <%- account.logged_in ? '<i data-lucide="check" class="size-5 text-green-500"></i>' : '<i data-lucide="x" class="size-5 text-red-500"></i>' %>
-                                    </td>
-                                    <td>
-                                        <a href="/mod/overview/<%= account.username %>" class="link">
+                                    <td class="flex items-center gap-x-3">
+                                        <div class="md:tooltip"
+                                            data-tip="<%= account.logged_in ? 'Logged In' : 'Logged Out' %>">
+                                            <%- account.logged_in ? '<i data-lucide="circle-check-big" class="size-5 text-green-600"></i>' : '<i data-lucide="circle-minus" class="size-5 text-gray-400"></i>' %>
+                                        </div>
+
+                                        <a href="/mod/overview/<%= account.username %>"
+                                            class="text-xl font-bold link link-hover">
                                             <%= toDisplayName(account.username) %>
                                         </a>
                                     </td>
                                     <td>
-                                        <a href="/mod/ip/<%= account.ip %>" class="link">
-                                            <%= account.ip %>
-                                        </a>
+                                        <div class="flex flex-col">
+                                            <div>
+                                                <span class="text-stone-300 font-semibold">Registration:</span>
+
+                                                <a href="/mod/ip/<%= account.registration_ip %>"
+                                                    class="link link-hover">
+                                                    <%= account.registration_ip %>
+                                                </a>
+                                            </div>
+
+                                            <div>
+                                                <span class="text-stone-300 font-semibold">Last Session:</span>
+
+                                                <a href="/mod/ip/<%= account.ip %>" class="link link-hover">
+                                                    <%= account.ip %>
+                                                </a>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td>
-                                        <a href="/mod/uid/<%= account.uid %>" class="link">
+                                        <a href="/mod/uid/<%= account.uid %>" class="link link-hover">
                                             <%= account.uid %>
                                         </a>
                                     <td>
-                                        <div class="md:tooltip" data-tip="<%= formatTime(account.latest_timestamp) %>">
-                                            <%= fromNow(account.latest_timestamp) %>
+                                        <% if (account.timestamp) { %>
+                                        <div class="md:tooltip" data-tip="<%= formatTime(account.timestamp) %>">
+                                            <%= fromNow(account.timestamp) %>
                                         </div>
+                                        <% } else { %>
+                                        N/A
+                                        <% } %>
                                     </td>
                                     <td>
                                         <%= formatTime(account.registration_date) %>

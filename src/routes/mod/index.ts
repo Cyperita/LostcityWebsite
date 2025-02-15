@@ -9,7 +9,7 @@ import { isUsernameExplicit, isUsernameValid } from '#/util/Username.js';
 import { requiresStaffLevel } from '#/util/Authentication.js';
 import { toAbsolute, toCoord, toDisplayCoord } from '#/util/Map.js';
 import { fromNow, formatTime } from '#/util/Timestamp.js';
-import { applyChatFilters, applyReportFilters, extractFilters } from '#/util/Filters.js';
+import { applyChatFilters, applyReportFilters, applyUserFilters, extractFilters } from '#/util/Filters.js';
 
 function embedCoord(coord: number) {
     const { level, x, z } = toAbsolute(coord);
@@ -927,21 +927,26 @@ export default async function (app: FastifyInstance) {
             const page = parseInt(req.query.page) || 1;
             const limit = parseInt(req.query.limit) || 25;
 
-            const filters = extractFilters(req.query, ['start', 'end', 'username', 'sort', 'order']);
+            const filters = extractFilters(req.query, ['start', 'end', 'username', 'active', 'ip', 'uid', 'sort', 'order']);
 
-            let baseQuery = applyReportFilters(
-                db.selectFrom('account')
-                .select([
-                    'username',
-                    'registration_ip',
-                    'registration_date',
-                    db.fn.max('session.ip').as('ip'),
-                    db.fn.max('session.uid').as('uid'),
-                    db.fn.max('session.timestamp').as('latest_timestamp')
-                ])
-                .leftJoin('session', 'account.id', 'session.account_id')
-                .groupBy(['account.id', 'username', 'registration_ip', 'registration_date']),
-                filters, 'latest_timestamp'
+            let baseQuery = applyUserFilters(db.selectFrom('account')
+                .select('account.id')
+                .select('account.username')
+                .select('account.registration_ip')
+                .select('account.registration_date')
+                .select('logged_in')
+                .select(db.dynamic.ref('session.ip'))
+                .select(db.dynamic.ref('session.uid'))
+                .select(db.dynamic.ref('session.timestamp'))
+                .leftJoin('session', join =>
+                    join
+                        .onRef('account.id', '=', 'session.account_id')
+                        .on('session.timestamp', '=', db
+                            .selectFrom('session')
+                            .select((eb) => eb.fn.max('timestamp').as('max_timestamp'))
+                            .whereRef('account_id', '=', db.dynamic.ref('account.id'))
+                        )
+                ), filters
             );
 
             const totalRecords = await baseQuery
