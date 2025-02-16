@@ -31,17 +31,27 @@ const reasons = [
     'Real world item trading'
 ];
 
-const tempHardcodedSidebar = [
-    { icon: 'layout-grid', title: 'Summary (fake data)', link: '/mod' },
-    { icon: 'flag', title: 'Reports'/*, badge: '26' */, link: '/mod/reports' }, // TODO: Dynamically add badge
-    { icon: 'user-search', title: 'Search Users', link: '/mod/search' }
-];
-
 const tempHardcodedDashboardCards = [
     { title: 'Reports Made', value: '+56', icon: 'flag', color: 'error' },
     { title: 'Accounts Created', value: '+827', icon: 'user-plus', color: 'success' },
     { title: 'Wealth Added', value: '+3M', icon: 'coins', color: 'warning' }
 ];
+
+function generateDashboardSidebar(activeUrl: string) {
+    const baseTabs = [
+        { icon: 'layout-grid', title: 'Summary', link: '/mod' },
+        { icon: 'flag', title: 'Reports', link: '/mod/reports' },
+        { icon: 'user-search', title: 'Users', link: '/mod/users' }
+    ];
+
+    return baseTabs.map(tab => {
+        const baseTab: any = { ...tab };
+        if (baseTab.link.toLowerCase() === activeUrl.toLocaleLowerCase()) {
+            baseTab.active = true;
+        }
+        return baseTab
+    });
+}
 
 function generateOverviewSidebar(account: any, activeUrl: string) {
     const baseTabs = [
@@ -67,7 +77,7 @@ export default async function (app: FastifyInstance) {
         try {
             return res.view('mod/index', {
                 breadcrumbs: [],
-                sidebarItems: tempHardcodedSidebar,
+                sidebarItems: generateDashboardSidebar(req.locals.url),
                 exampleDashboardCards: tempHardcodedDashboardCards,
                 title: 'Overview'
             });
@@ -345,7 +355,7 @@ export default async function (app: FastifyInstance) {
                 formatTime,
                 buildQueryString,
                 breadcrumbs: [],
-                sidebarItems: tempHardcodedSidebar,
+                sidebarItems: generateDashboardSidebar(req.locals.url),
                 exampleDashboardCards: tempHardcodedDashboardCards,
                 title: 'Reports',
                 reports,
@@ -968,7 +978,7 @@ export default async function (app: FastifyInstance) {
                 formatTime,
                 buildQueryString,
                 breadcrumbs: [],
-                sidebarItems: tempHardcodedSidebar,
+                sidebarItems: generateDashboardSidebar(req.locals.url),
                 exampleDashboardCards: tempHardcodedDashboardCards,
                 title: 'Users',
                 accounts,
