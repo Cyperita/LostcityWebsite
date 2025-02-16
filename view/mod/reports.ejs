@@ -1,7 +1,9 @@
 <html>
+
 <head>
     <%- include('partials/head-metadata.ejs', { title }); %>
 </head>
+
 <body class="bg-base-200">
     <%- include('partials/bg-image.ejs'); %>
     <%- include('partials/navbar'); %>
@@ -62,19 +64,8 @@
                                 placeholder: ''
                             }) %>
 
-                            <input type="hidden" name="sort" value="<%= filters.sort %>" />
-                            <input type="hidden" name="order" value="<%= filters.order %>" />
-                            <input type="hidden" name="limit" value="<%= limit %>" />
-
-                            <button class="btn btn-sm btn-primary" type="submit">
-                                <i data-lucide="search" class="size-5"></i>
-                            </button>
-
-                            <span class="tooltip" data-tip="Reset Filters">
-                                <a href="/mod/reports" class="btn btn-sm">
-                                    <i data-lucide="x" class="size-5"></i>
-                                </a>
-                            </span>
+                            <%- include('components/filter-hidden-inputs', { sort: filters.sort, order: filters.order, limit }); %>
+                            <%- include('components/filter-buttons', { link: '/mod/reports' }); %>
                         </form>
                     </div>
 
@@ -94,18 +85,45 @@
                                 <% reports.forEach(function(report) { %>
                                 <tr>
                                     <td>
-                                        <a href="/mod/overview/<%= report.username %>" class="link">
+                                        <a href="/mod/overview/<%= report.username %>" class="text-lg font-semibold link link-hover text-stone-300">
                                             <%= toDisplayName(report.username) %>
                                         </a>
                                     </td>
                                     <td>
-                                        <a href="/mod/overview/<%= report.offender %>" class="link">
+                                        <a href="/mod/overview/<%= report.offender %>" class="text-lg font-semibold link link-hover text-red-300">
                                             <%= toDisplayName(report.offender) %>
                                         </a>
                                     </td>
-                                    <td><em><%= reasons[report.reason] %></em></td>
+                                    <td>
+                                        <%
+                                        const reasonIcons = [
+                                            'whole-word',
+                                            'swords',
+                                            'key-round',
+                                            'bug',
+                                            'crown',
+                                            'hand-helping',
+                                            'bot',
+                                            'users',
+                                            'scale',
+                                            'life-buoy',
+                                            'megaphone',
+                                            'banknote'
+                                        ];
+                                        %>
+
+                                        <div class="flex items-center gap-x-2 leading-none">
+                                            <i data-lucide="<%= reasonIcons[report.reason] %>" class="size-5 text-stone-400"></i>
+
+                                            <%= reasons[report.reason] %>
+                                        </div>
+                                    </td>
                                     <td><%= report.world - 9 %></td>
-                                    <td><%= toDisplayCoord(report.coord) %></td>
+                                    <td>
+                                        <a target="_blank" href="<%= embedCoord(report.coord) %>" class="link">
+                                            <%= toDisplayCoord(report.coord) %>
+                                        </a>
+                                    </td>
                                     <td>
                                         <div class="md:tooltip" data-tip="<%= formatTime(report.timestamp) %>">
                                             <%= fromNow(report.timestamp) %>
