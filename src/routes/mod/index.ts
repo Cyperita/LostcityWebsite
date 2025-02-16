@@ -102,7 +102,7 @@ export default async function (app: FastifyInstance) {
             toDisplayCoord,
             account,
             title: `${toDisplayName(account.username)} Overview`,
-            breadcrumbs: [],
+            breadcrumbs: [{ link: '/mod/users', title: 'Users' }],
             sidebarItems: generateOverviewSidebar(account, req.locals.url),
             partial: 'summary'
         });
@@ -123,7 +123,7 @@ export default async function (app: FastifyInstance) {
             toDisplayCoord,
             account,
             title: `${toDisplayName(account.username)} Sessions`,
-            breadcrumbs: [],
+            breadcrumbs: [{ link: '/mod/users', title: 'Users' }],
             sidebarItems: generateOverviewSidebar(account, req.locals.url),
             partial: 'sessions'
         });
@@ -168,7 +168,7 @@ export default async function (app: FastifyInstance) {
             buildQueryString,
             formatTime,
             title: `${toDisplayName(account.username)} Public Chats`,
-            breadcrumbs: [],
+            breadcrumbs: [{ link: '/mod/users', title: 'Users' }],
             sidebarItems: generateOverviewSidebar(account, req.locals.url),
             partial: 'public-chats',
             totalRecords,
@@ -217,7 +217,7 @@ export default async function (app: FastifyInstance) {
             buildQueryString,
             formatTime,
             title: `${toDisplayName(account.username)} Private Chats`,
-            breadcrumbs: [],
+            breadcrumbs: [{ link: '/mod/users', title: 'Users' }],
             sidebarItems: generateOverviewSidebar(account, req.locals.url),
             partial: 'private-chats',
             totalRecords,
@@ -241,7 +241,7 @@ export default async function (app: FastifyInstance) {
             toDisplayCoord,
             account,
             title: `${toDisplayName(account.username)} Wealth Events`,
-            breadcrumbs: [],
+            breadcrumbs: [{ link: '/mod/users', title: 'Users' }],
             sidebarItems: generateOverviewSidebar(account, req.locals.url),
             partial: 'wealth-events'
         });
@@ -260,7 +260,7 @@ export default async function (app: FastifyInstance) {
             toDisplayCoord,
             account,
             title: `${toDisplayName(account.username)} Events`,
-            breadcrumbs: [],
+            breadcrumbs: [{ link: '/mod/users', title: 'Users' }],
             sidebarItems: generateOverviewSidebar(account, req.locals.url),
             partial: 'events'
         });
