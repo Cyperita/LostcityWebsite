@@ -928,12 +928,8 @@ export default async function (app: FastifyInstance) {
         }
     });
 
-    app.get('/users', async (req: any, res: any) => {
+    app.get('/users', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
         try {
-            if (!req.session.account || req.session.account.staffmodlevel < 1) {
-                return res.redirect('/account/login?redirectUrl=/mod/users', 302);
-            }
-
             const page = parseInt(req.query.page) || 1;
             const limit = parseInt(req.query.limit) || 25;
 
