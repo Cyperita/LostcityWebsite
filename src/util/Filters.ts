@@ -10,16 +10,18 @@ export function extractFilters(query: Record<string, any>, keys: string[]): Reco
 }
 
 // Could probably combine this into 1 function and just pass an array of expected columns, but oh well
-export function applyChatFilters<DB>(
+export function applyOverviewFilters<DB>(
     query: SelectQueryBuilder<DB, keyof DB, any>,
     filters: Record<string, string>,
     defaultSort: string = 'timestamp',
     defaultOrder: 'asc' | 'desc' = 'desc'
 ) {
     if (filters.start) query = query.where('timestamp' as any, '>=', toDbDate(filters.start));
-    if (filters.end) query = query.where('timestamp' as any, '>=', toDbDate(filters.end));
-    if (filters.world) query = query.where('world' as any, '=', filters.world);
+    if (filters.end) query = query.where('timestamp' as any, '<=', toDbDate(filters.end));
+    if (filters.world) query = query.where('world' as any, '=', parseInt(filters.world) + 9);
     if (filters.message) query = query.where('message' as any, 'like', `%${filters.message}%`);
+    if (filters.ip) query = query.where('ip' as any, '=', filters.ip);
+    if (filters.uid) query = query.where('uid' as any, '=', filters.uid);
 
     const sortField = filters.sort ?? defaultSort;
     const sortOrder = filters.order === 'asc' || filters.order === 'desc' ? filters.order : defaultOrder;

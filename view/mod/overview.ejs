@@ -1,7 +1,9 @@
 <html>
+
 <head>
   <%- include('partials/head-metadata.ejs', { title }); %>
 </head>
+
 <body class="bg-base-200">
   <%- include('partials/bg-image.ejs'); %>
   <%- include('partials/navbar'); %>
@@ -12,9 +14,7 @@
       <%- include('components/sidebar.ejs', { items: sidebarItems }); %>
 
       <div class="grid flex-1 auto-cols-fr gap-y-8">
-        <div class="card bg-base-100 w-full">
-          <%- include(`partials/overview/${partial}`) %>
-        </div>
+        <%- include(`partials/overview/${partial}`) %>
       </div>
     </div>
   </section>

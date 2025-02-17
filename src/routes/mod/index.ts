@@ -9,7 +9,7 @@ import { isUsernameExplicit, isUsernameValid } from '#/util/Username.js';
 import { requiresStaffLevel } from '#/util/Authentication.js';
 import { toAbsolute, toCoord, toDisplayCoord } from '#/util/Map.js';
 import { fromNow, formatTime } from '#/util/Timestamp.js';
-import { applyChatFilters, applyReportFilters, applyUserFilters, extractFilters } from '#/util/Filters.js';
+import { applyOverviewFilters, applyReportFilters, applyUserFilters, extractFilters } from '#/util/Filters.js';
 
 function embedCoord(coord: number) {
     const { level, x, z } = toAbsolute(coord);
@@ -110,22 +110,53 @@ export default async function (app: FastifyInstance) {
 
     app.get('/overview/sessions/:username', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
         const { username } = req.params;
-        const account = await db.selectFrom('account').where('username', '=', username).selectAll().executeTakeFirst();
+        const user = await db.selectFrom('account').where('username', '=', username).selectAll().executeTakeFirst();
 
-        if (!account) {
+        if (!user) {
             return res.view('mod/notfound', {
                 username
             });
         }
 
+        const page = parseInt(req.query.page) || 1,
+            limit = parseInt(req.query.limit) || 25;
+
+        const filters = extractFilters(req.query, ['start', 'end', 'world', 'ip', 'uid', 'sort', 'order']);
+
+        let baseQuery = applyOverviewFilters(
+            db.selectFrom('session').where('account_id', '=', user.id),
+            filters
+        );
+
+        const totalRecords = await baseQuery
+            .select(db.fn.countAll().as('count'))
+            .executeTakeFirst();
+
+        const sessions = await baseQuery
+            .selectAll('session')
+            .limit(limit)
+            .offset((page - 1) * limit)
+            .execute();
+
+        const totalPages = totalRecords ? Math.ceil(Number(totalRecords.count) / limit) : 0;
+
         return res.view('mod/overview', {
             toDisplayName,
             toDisplayCoord,
-            account,
-            title: `${toDisplayName(account.username)} Sessions`,
+            embedCoord,
+            fromNow,
+            buildQueryString,
+            formatTime,
+            title: `${toDisplayName(user.username)}`,
             breadcrumbs: [{ link: '/mod/users', title: 'Users' }],
-            sidebarItems: generateOverviewSidebar(account, req.locals.url),
-            partial: 'sessions'
+            sidebarItems: generateOverviewSidebar(user, req.locals.url),
+            partial: 'sessions',
+            totalRecords,
+            sessions,
+            currentPage: page,
+            totalPages,
+            filters,
+            limit
         });
     });
 
@@ -138,29 +169,29 @@ export default async function (app: FastifyInstance) {
                 username
             });
         }
-        
+
         const page = parseInt(req.query.page) || 1,
-              limit = parseInt(req.query.limit) || 25;
-        
+            limit = parseInt(req.query.limit) || 25;
+
         const filters = extractFilters(req.query, ['start', 'end', 'message', 'sort', 'order']);
 
-        let baseQuery = applyChatFilters(
+        let baseQuery = applyOverviewFilters(
             db.selectFrom('public_chat').where('account_id', '=', account.id),
             filters
         );
-        
+
         const totalRecords = await baseQuery
             .select(db.fn.countAll().as('count'))
             .executeTakeFirst();
-        
+
         const messages = await baseQuery
             .selectAll('public_chat')
             .limit(limit)
             .offset((page - 1) * limit)
             .execute();
-        
+
         const totalPages = totalRecords ? Math.ceil(Number(totalRecords.count) / limit) : 0;
-        
+
         return res.view('mod/overview', {
             toDisplayName,
             toDisplayCoord,
@@ -187,29 +218,29 @@ export default async function (app: FastifyInstance) {
                 username
             });
         }
-        
+
         const page = parseInt(req.query.page) || 1,
-              limit = parseInt(req.query.limit) || 25;
-        
+            limit = parseInt(req.query.limit) || 25;
+
         const filters = extractFilters(req.query, ['start', 'end', 'message', 'sort', 'order']);
 
-        let baseQuery = applyChatFilters(
+        let baseQuery = applyOverviewFilters(
             db.selectFrom('private_chat').where('account_id', '=', account.id),
             filters
         );
-        
+
         const totalRecords = await baseQuery
             .select(db.fn.countAll().as('count'))
             .executeTakeFirst();
-        
+
         const messages = await baseQuery
             .selectAll('private_chat')
             .limit(limit)
             .offset((page - 1) * limit)
             .execute();
-        
+
         const totalPages = totalRecords ? Math.ceil(Number(totalRecords.count) / limit) : 0;
-        
+
         return res.view('mod/overview', {
             toDisplayName,
             toDisplayCoord,
@@ -423,7 +454,7 @@ export default async function (app: FastifyInstance) {
             .where('id', '=', id)
             .selectAll()
             .executeTakeFirst();
-        
+
         if (!account) {
             return res.status(400).send({ error: `Account with ID '${id}' does not exist` });
         }
@@ -445,7 +476,7 @@ export default async function (app: FastifyInstance) {
             .where('id', '=', id)
             .selectAll()
             .executeTakeFirst();
-        
+
         if (!account) {
             return res.status(400).send({ error: `Account with ID '${id}' does not exist` });
         }
@@ -454,7 +485,7 @@ export default async function (app: FastifyInstance) {
             .set({ banned_until: null, logged_in: 0 })
             .where('id', '=', id)
             .execute();
-        
+
         return res.status(200).send({ success: true });
     });
 
@@ -470,7 +501,7 @@ export default async function (app: FastifyInstance) {
             .where('id', '=', id)
             .selectAll()
             .executeTakeFirst();
-        
+
         if (!account) {
             return res.status(400).send({ error: `Account with ID '${id}' does not exist` });
         }
@@ -492,7 +523,7 @@ export default async function (app: FastifyInstance) {
             .where('id', '=', id)
             .selectAll()
             .executeTakeFirst();
-        
+
         if (!account) {
             return res.status(400).send({ error: `Account with ID '${id}' does not exist` });
         }
@@ -501,7 +532,7 @@ export default async function (app: FastifyInstance) {
             .set({ muted_until: null, logged_in: 0 })
             .where('id', '=', id)
             .execute();
-        
+
         return res.status(200).send({ success: true });
     });
 
@@ -511,7 +542,7 @@ export default async function (app: FastifyInstance) {
             .where('id', '=', id)
             .selectAll()
             .executeTakeFirst();
-        
+
         if (!account) {
             return res.status(400).send({ error: `Account with ID '${id}' does not exist` });
         }
@@ -520,7 +551,7 @@ export default async function (app: FastifyInstance) {
             .set({ logged_in: 0 })
             .where('id', '=', id)
             .execute();
-        
+
         return res.status(200).send({ success: true });
     });
 
