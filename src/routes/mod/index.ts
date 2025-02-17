@@ -150,6 +150,7 @@ export default async function (app: FastifyInstance) {
             title: `${toDisplayName(user.username)}`,
             breadcrumbs: [{ link: '/mod/users', title: 'Users' }],
             sidebarItems: generateOverviewSidebar(user, req.locals.url),
+            user,
             partial: 'sessions',
             totalRecords,
             sessions,
@@ -162,9 +163,9 @@ export default async function (app: FastifyInstance) {
 
     app.get('/overview/chats/public/:username', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
         const { username } = req.params;
-        const account = await db.selectFrom('account').where('username', '=', username).selectAll().executeTakeFirst();
+        const user = await db.selectFrom('account').where('username', '=', username).selectAll().executeTakeFirst();
 
-        if (!account) {
+        if (!user) {
             return res.view('mod/notfound', {
                 username
             });
@@ -176,7 +177,7 @@ export default async function (app: FastifyInstance) {
         const filters = extractFilters(req.query, ['start', 'end', 'message', 'sort', 'order']);
 
         let baseQuery = applyOverviewFilters(
-            db.selectFrom('public_chat').where('account_id', '=', account.id),
+            db.selectFrom('public_chat').where('account_id', '=', user.id),
             filters
         );
 
@@ -198,9 +199,10 @@ export default async function (app: FastifyInstance) {
             fromNow,
             buildQueryString,
             formatTime,
-            title: `${toDisplayName(account.username)} Public Chats`,
+            title: `${toDisplayName(user.username)}`,
             breadcrumbs: [{ link: '/mod/users', title: 'Users' }],
-            sidebarItems: generateOverviewSidebar(account, req.locals.url),
+            sidebarItems: generateOverviewSidebar(user, req.locals.url),
+            user,
             partial: 'public-chats',
             totalRecords,
             messages,
@@ -211,9 +213,9 @@ export default async function (app: FastifyInstance) {
     });
     app.get('/overview/chats/private/:username', { onRequest: requiresStaffLevel(1, true) }, async (req: any, res: any) => {
         const { username } = req.params;
-        const account = await db.selectFrom('account').where('username', '=', username).selectAll().executeTakeFirst();
+        const user = await db.selectFrom('account').where('username', '=', username).selectAll().executeTakeFirst();
 
-        if (!account) {
+        if (!user) {
             return res.view('mod/notfound', {
                 username
             });
@@ -225,7 +227,7 @@ export default async function (app: FastifyInstance) {
         const filters = extractFilters(req.query, ['start', 'end', 'message', 'sort', 'order']);
 
         let baseQuery = applyOverviewFilters(
-            db.selectFrom('private_chat').where('account_id', '=', account.id),
+            db.selectFrom('private_chat').where('account_id', '=', user.id),
             filters
         );
 
@@ -247,9 +249,10 @@ export default async function (app: FastifyInstance) {
             fromNow,
             buildQueryString,
             formatTime,
-            title: `${toDisplayName(account.username)} Private Chats`,
+            title: `${toDisplayName(user.username)}`,
             breadcrumbs: [{ link: '/mod/users', title: 'Users' }],
-            sidebarItems: generateOverviewSidebar(account, req.locals.url),
+            sidebarItems: generateOverviewSidebar(user, req.locals.url),
+            user,
             partial: 'private-chats',
             totalRecords,
             messages,
